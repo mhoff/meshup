@@ -23,7 +23,7 @@ const ConnectionTable: React.FC<{}> = ({}) => {
           <tbody>
             {team.connectedness.map((row, rowIndex) => (
               <tr key={"row-" + rowIndex}>
-                <td>{team.labels[rowIndex]}</td>
+                <td>{team.labels[team.labels.length - 1 - rowIndex]}</td>
                 {row.map((cellValue, colIndex) => (
                   <td key={[rowIndex, colIndex].join("/")}
                   onClick={(e) => setTeam(setConnectedness(team, rowIndex, colIndex, cellValue + 1))}>{cellValue}</td>

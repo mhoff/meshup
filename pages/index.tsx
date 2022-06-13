@@ -5,6 +5,7 @@ import styles from '../styles/Home.module.css'
 import MemberList from '../components/members'
 import ConnectionTable from '../components/connectionTable'
 import Pairing from '../components/pairing'
+import MemberGraph from '../components/memberGraph'
 
 const Home: NextPage = () => {
   return (
@@ -22,6 +23,7 @@ const Home: NextPage = () => {
 
         <MemberList></MemberList>
         <ConnectionTable></ConnectionTable>
+        <MemberGraph width={500} height={500}></MemberGraph>
         <Pairing></Pairing>
       </main>
 
