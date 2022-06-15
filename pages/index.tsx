@@ -3,9 +3,10 @@ import Head from 'next/head'
 import Image from 'next/image'
 import styles from '../styles/Home.module.css'
 import MemberList from '../components/members'
-import ConnectionTable from '../components/connectionTable'
+import ConnectionGrid from '../components/connectionGrid'
 import Pairing from '../components/pairing'
 import MemberGraph from '../components/memberGraph'
+import { Group } from '@mantine/core';
 
 const Home: NextPage = () => {
   return (
@@ -20,11 +21,14 @@ const Home: NextPage = () => {
         <h1 className={styles.title}>
           Matchup
         </h1>
-
-        <MemberList></MemberList>
-        <ConnectionTable></ConnectionTable>
-        <MemberGraph width={500} height={500}></MemberGraph>
-        <Pairing></Pairing>
+        <Group grow spacing={60} align={"top"}>
+          <MemberList></MemberList>
+          <ConnectionGrid></ConnectionGrid>
+        </Group>
+        <Group grow spacing={60} align={"top"}>
+          <Pairing></Pairing>
+          <MemberGraph width={500} height={500}></MemberGraph>
+        </Group>
       </main>
 
       <footer className={styles.footer}>

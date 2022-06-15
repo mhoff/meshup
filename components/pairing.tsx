@@ -25,7 +25,7 @@ const Pairing: React.FC<{}> = ({}) => {
 
   return (
     <div>
-      <h1>Pairing Generator</h1>
+      <h2>Pairing Generator</h2>
       {team.labels.length > 1 ? (
         <form onSubmit={handleGeneratorSubmit}>
         <input

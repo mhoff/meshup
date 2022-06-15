@@ -17,20 +17,26 @@ interface MemberLink extends d3.SimulationLinkDatum<MemberNode> {
 }
 
 const MemberGraph: React.FC<{width: number, height: number}> = ({width, height}) => {
-  const nodeRadius = 25
+  const minDistBetweenNodes = 5
+  const linkColorMap = [
+    "red", // strength <0
+    "black", // strength 0
+    "green", // strength >0
+  ]
 
   // const svgRef = useRef<SVGSVGElement>(null);
 
   const {team} = useTeamContext()
   const [animatedNodes, setAnimatedNodes] = useState<MemberNode[]>([])
   const [animatedLinks, setAnimatedLinks] = useState<MemberLink[]>([])
+  const nodeRadius = Math.max(...team.labels.map(label => label.length * 4), 25)
 
   const nodes = useMemo(
     () =>
       team.labels.map((name) => {
         const oldNode = animatedNodes.find(node => node.name == name)
         if (oldNode) {
-          return oldNode
+          return Object.assign(oldNode, { r: nodeRadius })
         } else {
           return {
             id: name,
@@ -59,13 +65,13 @@ const MemberGraph: React.FC<{width: number, height: number}> = ({width, height})
 
   useEffect(() => {
     const linkSimulation = d3.forceLink<MemberNode, MemberLink>()
-    linkSimulation.strength((link => link.strength * 0.01))
+    linkSimulation.strength((link => link.strength < 0 ? link.strength * 0.002 : link.strength * 0.01))
     linkSimulation.distance(0)
 
     const simulation = d3.forceSimulation<MemberNode, MemberLink>()
       .force("link", linkSimulation)
-      .force("charge", d3.forceManyBody().strength(-1000))
-      .force("collision", d3.forceCollide(nodeRadius))
+      .force("charge", d3.forceManyBody().strength(-1000 - nodeRadius * 25))
+      .force("collision", d3.forceCollide(nodeRadius + minDistBetweenNodes))
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("x", d3.forceX(100))
       .force("y", d3.forceY(100))
@@ -85,9 +91,9 @@ const MemberGraph: React.FC<{width: number, height: number}> = ({width, height})
 
   return (
     <div>
-      <h1>Team Members</h1>
+      <h2>Team Graph</h2>
       <svg width={width} height={height}>
-        <g stroke={"#999"} strokeOpacity={0.8}>
+        <g strokeOpacity={0.8}>
           {animatedLinks.map(link => (
             <line
               key={`link-${link.source.id}-${link.target.id}`}
@@ -95,14 +101,16 @@ const MemberGraph: React.FC<{width: number, height: number}> = ({width, height})
               x2={link.target.x}
               y1={link.source.y}
               y2={link.target.y}
-              strokeWidth={Math.min(2 * nodeRadius, link.strength + 1)}
+              style={{stroke: linkColorMap[Math.sign(link.strength) + 1]}}
+              strokeWidth={Math.min(2 * nodeRadius, Math.abs(link.strength) + 1)}
+              strokeDasharray={link.strength == 0 ? 5 : 0}
             />
           ))}
         </g>
         {animatedNodes.map(node => (
           <g className={"node"} transform={`translate(${node.x}, ${node.y})`} key={node.id}>
-            <circle fill={"black"} r={node.r}></circle>
-            <text y={5} fill={"red"} textAnchor={"middle"}>{node.name}</text>
+            <circle fill={"#CCC"} r={node.r}></circle>
+            <text y={5} fill={"black"} fontSize={13} textAnchor={"middle"}>{node.name}</text>
           </g>
         ))}
       </svg>
