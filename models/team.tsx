@@ -26,7 +26,7 @@ export function appendTeam(team: Team, newMember: string): Team {
 
 export const growTeam = appendTeam
 
-function *withRowRemoved(conn: Connectedness, rowIndex: number, colIndex: number): Generator<number[]> {
+function *withRowRemoved(conn: Connectedness, rowIndex: number, colIndex: number): Generator<number[], any, undefined> {
   for (let r = 0; r < rowIndex; r++) {
     yield conn[r].filter((_, c) => c != colIndex)
   }

@@ -1,18 +1,29 @@
+
+export function GroupScoreAverage(strengths: number[]): number {
+  return GroupScoreSum(strengths) / strengths.length
+}
+
+export function GroupScoreSum(strengths: number[]): number {
+  return strengths.reduce((v, acc) => v + acc, 0)
+}
 export class Matcher {
   private scoreGrid: number[][]
   private groupSize: number
   private bestScore: number
   private bestMatches: Array<Array<Array<number>>>
 
-  static match(scoreGrid:number[][], groupSize: number): Array<Array<Array<number>>> {
-    return new Matcher(scoreGrid, groupSize).match()
+  private computeGroupScore: ((_: number[]) => number) = GroupScoreSum 
+
+  static match(scoreGrid:number[][], groupSize: number, groupScore=GroupScoreSum): Array<Array<Array<number>>> {
+    return new Matcher(scoreGrid, groupSize, groupScore).match()
   }
 
-  private constructor(scoreGrid:number[][], groupSize: number) {
+  private constructor(scoreGrid:number[][], groupSize: number, computeGroupScore: ((_: number[]) => number)) {
     this.scoreGrid = scoreGrid
     this.groupSize = groupSize
     this.bestScore = Number.POSITIVE_INFINITY
     this.bestMatches = new Array()
+    this.computeGroupScore = computeGroupScore
   }
 
   private match(): Array<Array<Array<number>>> {
@@ -46,7 +57,7 @@ export class Matcher {
           // the current group value can be part of a valid group
           if (i == maxGroupIndex) {
             // base case, group has been fully populated
-            let currScore = partialScore + this.computeScore(remIndices, currGroup)
+            let currScore = partialScore + this.computeGroupScore([...this.getWeights(remIndices, currGroup)])
             if (currScore > this.bestScore) {
               // console.log("Skipping group %s due to bad score (%d > %d)", currGroup, currScore, this.bestScore)
               continue
@@ -75,14 +86,12 @@ export class Matcher {
     }
   }
 
-  private computeScore(indices: Array<number>, group: Array<number>): number {
-    let result = 0
+  private *getWeights(indices: Array<number>, group: Array<number>): Generator<number, any, undefined> {
     for (let i = group.length - 1; i >= 1; i--) {
       for (let j = i - 1; j >= 0; j--) {
-        result += this.lookupScore(indices[group[j]], indices[group[i]])
+        yield this.lookupScore(indices[group[j]], indices[group[i]])
       }
     }
-    return result
   }
 
   private lookupScore(p1: number, p2: number): number {
@@ -98,8 +107,6 @@ export class TeamMatcher {
   constructor(labels: string[], connectedness: number[][]) {
     this.labels = labels
     this.count = labels.length
-    // this.fam = new Array(this.count - 1).fill(0).map((_, i:number) => new Array(this.count - i - 1).fill(0))
-    // this.fam = new Array(this.count - 1).fill(0).map((_, i:number) => new Array(this.count - i - 1).fill(0).map((_, j) => i * 10 + j))
     this.fam = Object.assign([], connectedness.map(row => Object.assign([], row)))
   }
 
@@ -108,20 +115,4 @@ export class TeamMatcher {
     return matchedIndices.map(m => m.map(g => g.map(i => this.labels[i])))
   }
 
-  public print() {
-    console.log(this.fam)
-  }
 }
-
-/*
-
-let people = ["Michael", "Mathias", "Anselm", "Dominik", "Jan", "Noli", "Thomas"]
-
-var m = new Team(people)
-m.print()
-const matches = m.match(2)
-
-for (const match of matches) {
-  console.log(match)
-}
-*/

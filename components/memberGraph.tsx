@@ -16,7 +16,7 @@ interface MemberLink extends d3.SimulationLinkDatum<MemberNode> {
   strength: number
 }
 
-const MemberGraph: React.FC<{width: number, height: number}> = ({width, height}) => {
+const MemberGraph: React.FC<{}> = () => {
   const minDistBetweenNodes = 5
   const linkColorMap = [
     "red", // strength <0
@@ -72,7 +72,7 @@ const MemberGraph: React.FC<{width: number, height: number}> = ({width, height})
       .force("link", linkSimulation)
       .force("charge", d3.forceManyBody().strength(-1000 - nodeRadius * 25))
       .force("collision", d3.forceCollide(nodeRadius + minDistBetweenNodes))
-      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("center", d3.forceCenter(500 / 2, 500 / 2)) // TODO
       .force("x", d3.forceX(100))
       .force("y", d3.forceY(100))
       .nodes([...nodes])
@@ -89,10 +89,20 @@ const MemberGraph: React.FC<{width: number, height: number}> = ({width, height})
     return () => { simulation.stop() }
   }, [nodes, links]);
 
+  function getViewBox() {
+    const minX = Math.min(...animatedNodes.map(n => n.x as number)) - nodeRadius
+    const maxX = Math.max(...animatedNodes.map(n => n.x as number)) + nodeRadius
+    const minY = Math.min(...animatedNodes.map(n => n.y as number)) - nodeRadius
+    const maxY = Math.max(...animatedNodes.map(n => n.y as number)) + nodeRadius
+
+    return `${minX} ${minY} ${maxX - minX} ${maxY - minY}`
+  }
+
   return (
     <div>
       <h2>Team Graph</h2>
-      <svg width={width} height={height}>
+      {team.labels.length > 1 ?
+      <svg width="100%" style={{ aspectRatio: "auto", maxWidth: "500px" }} viewBox={getViewBox()}>
         <g strokeOpacity={0.8}>
           {animatedLinks.map(link => (
             <line
@@ -113,7 +123,7 @@ const MemberGraph: React.FC<{width: number, height: number}> = ({width, height})
             <text y={5} fill={"black"} fontSize={13} textAnchor={"middle"}>{node.name}</text>
           </g>
         ))}
-      </svg>
+      </svg> : "More team members required."}
     </div>
     )
 }

@@ -1,12 +1,12 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
-import Image from 'next/image'
 import styles from '../styles/Home.module.css'
 import MemberList from '../components/members'
 import ConnectionGrid from '../components/connectionGrid'
 import Pairing from '../components/pairing'
 import MemberGraph from '../components/memberGraph'
 import { Group } from '@mantine/core';
+import { Grid } from '@mantine/core';
 
 const Home: NextPage = () => {
   return (
@@ -21,27 +21,35 @@ const Home: NextPage = () => {
         <h1 className={styles.title}>
           Matchup
         </h1>
-        <Group grow spacing={60} align={"top"}>
-          <MemberList></MemberList>
-          <ConnectionGrid></ConnectionGrid>
-        </Group>
-        <Group grow spacing={60} align={"top"}>
-          <Pairing></Pairing>
-          <MemberGraph width={500} height={500}></MemberGraph>
-        </Group>
+        <p>
+          Matchup helps teams to reduce disconnectedness by generating sensible team pairings for, e.g., coffee meetups.
+        </p>
+        <p>
+          Usage: add the members of your team (press Enter to add) and, optionally, adjust the connectedness matrix to
+          reflect how well connected the members already are. Connection strengths can be adjusted by clicking on the
+          individual cells. The icon in the top left indicates whether the click will produce an increment (+) or a decrement (-).
+          Modes can be toggled by clicking on the icon.
+          Then, the pairing generator can be used to produce all optimal pairings considering entered a-priori strengths.
+          Please note that, as of now, only pairs of two are supported.
+          Also please avoid large connection strengths (roughly bigger than 5).
+        </p>
+        <Grid justify={"center"} align={"stretch"} style={{width: "100%"}}>
+          <Grid.Col sm={12} md={6}>
+            <MemberList></MemberList>  
+          </Grid.Col>
+          <Grid.Col sm={12} md={6}>
+            <ConnectionGrid></ConnectionGrid>
+          </Grid.Col>
+          <Grid.Col sm={12} md={6}>
+            <Pairing></Pairing>
+          </Grid.Col>
+          <Grid.Col sm={12} md={6}>
+            <MemberGraph></MemberGraph>
+          </Grid.Col>
+        </Grid>
       </main>
 
       <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
       </footer>
     </div>
   )

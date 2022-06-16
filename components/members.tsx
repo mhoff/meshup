@@ -1,7 +1,7 @@
 import { FormEvent, useState } from "react"
 import { growTeam, shrinkTeam, swapMembers } from "../models/team"
 import { useTeamContext } from "../providers/team"
-import { Table, Button, ActionIcon } from '@mantine/core';
+import { Table, Space, ActionIcon } from '@mantine/core';
 import { TextInput } from '@mantine/core';
 import { CornerDownLeft, Trash, ArrowUp, ArrowDown } from 'tabler-icons-react';
 
@@ -20,14 +20,21 @@ const MemberList: React.FC<{}> = ({}) => {
 
   const handleInput = (e: FormEvent<HTMLInputElement>) => {
     const target = e.target as HTMLInputElement;
+    const value = target.value.trim()
     setInput(target.value);
-    setError((target.validity.patternMismatch || target.validity.badInput) ? "Please enter a name" : "")
+    if (!value.match("^.*\\S+.*$")) {
+      setError("Please enter a valid name")
+    } else if (target.value.length > 0 && team.labels.includes(value)) {
+      setError("This member already exists")
+    } else {
+      setError("")
+    }
   }
 
   return (
     <div style={{maxWidth: "400px"}}>
       <h2>Team Members</h2>
-      <Table verticalSpacing={4} sx={{ minWidth: 420, '& tbody tr td': { borderBottom: 0 } }}>
+      <Table verticalSpacing={4} sx={{ '& tbody tr td': { borderBottom: 0 } }}>
         <thead>
           <tr>
             <th>Member Name</th>
@@ -63,16 +70,16 @@ const MemberList: React.FC<{}> = ({}) => {
               ))}
             </tbody>
       </Table>
+      <Space h="md" />
       <form onSubmit={handleNewMemberSubmit}>
         <TextInput
           type="text"
           placeholder="Enter new member"
-          pattern="([ ]*|\S*)*\S+([ ]*|\S*)*"
           value={input}
           onChange={handleInput}
+          onInvalid={(e) => { (e.target as HTMLInputElement).setCustomValidity(""); e.preventDefault() }}
           rightSection={<CornerDownLeft size={16} />}
-          error={error.length > 0 || error}
-          required
+          error={error.length > 0 ? error : ""}
           >
         </TextInput>
       </form>
