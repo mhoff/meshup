@@ -1,7 +1,8 @@
-import '../styles/globals.css'
-import type { AppProps } from 'next/app'
-import { TeamProvider } from '../providers/team'
+import '../styles/globals.css';
+import type { AppProps } from 'next/app';
 import { MantineProvider } from '@mantine/core';
+import * as React from 'react';
+import { TeamProvider } from '../providers/team';
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
@@ -14,10 +15,11 @@ function MyApp({ Component, pageProps }: AppProps) {
       }}
     >
       <TeamProvider>
+        {/* eslint-disable-next-line react/jsx-props-no-spreading */}
         <Component {...pageProps} />
       </TeamProvider>
     </MantineProvider>
   );
 }
 
-export default MyApp
+export default MyApp;
