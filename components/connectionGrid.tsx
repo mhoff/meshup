@@ -30,7 +30,6 @@ export default function ConnectionGrid() {
 
   return (
     <div style={{ maxWidth: '400px' }}>
-      <h2>Team Connectedness</h2>
       {team.size > 1 ? (
         <Table verticalSpacing={4} sx={{ '& tbody tr td': { borderBottom: 0 } }}>
           <thead>

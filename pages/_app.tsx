@@ -3,6 +3,7 @@ import type { AppProps } from 'next/app';
 import { MantineProvider } from '@mantine/core';
 import * as React from 'react';
 import { TeamProvider } from '../providers/team';
+import Shell from '../components/shell';
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
@@ -15,8 +16,10 @@ function MyApp({ Component, pageProps }: AppProps) {
       }}
     >
       <TeamProvider>
-        {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-        <Component {...pageProps} />
+        <Shell>
+          {/* eslint-disable-next-line react/jsx-props-no-spreading */}
+          <Component {...pageProps} />
+        </Shell>
       </TeamProvider>
     </MantineProvider>
   );

@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
 import {
-  Table, Space, ActionIcon, TextInput,
+  Table, Space, ActionIcon, TextInput, UnstyledButton,
 } from '@mantine/core';
 import {
   CornerDownLeft, Trash, ArrowUp, ArrowDown,
@@ -37,7 +37,6 @@ export default function MemberList() {
 
   return (
     <div style={{ maxWidth: '400px' }}>
-      <h2>Team Members</h2>
       <Table verticalSpacing={4} sx={{ '& tbody tr td': { borderBottom: 0 } }}>
         <thead>
           <tr>
@@ -85,7 +84,7 @@ export default function MemberList() {
           value={input}
           onChange={handleInput}
           onInvalid={(e) => { (e.target as HTMLInputElement).setCustomValidity(''); e.preventDefault(); }}
-          rightSection={<CornerDownLeft size={16} />}
+          rightSection={<UnstyledButton type="submit"><CornerDownLeft size={16} /></UnstyledButton>}
           error={error.length > 0 ? error : ''}
         />
       </form>

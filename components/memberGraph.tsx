@@ -32,7 +32,7 @@ export default function MemberGraph() {
   const { team } = useTeamContext();
   const [animatedNodes, setAnimatedNodes] = useState<MemberNode[]>([]);
   const [animatedLinks, setAnimatedLinks] = useState<MemberLink[]>([]);
-  const nodeRadius = Math.max(...team.members.map((member) => member.name.length * 4), 25);
+  const nodeRadius = useMemo(() => Math.max(...team.members.map((member) => member.name.length * 4), 25), [team]);
 
   const nodes = useMemo(
     () => team.members.map((member) => {
@@ -48,7 +48,8 @@ export default function MemberGraph() {
         y: NaN,
       };
     }),
-    [team],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [team, nodeRadius],
   );
 
   const links = useMemo(
@@ -57,6 +58,7 @@ export default function MemberGraph() {
       target: nodes[colIndex],
       strength: conn,
     })))),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [team],
   );
 
@@ -84,7 +86,7 @@ export default function MemberGraph() {
     simulation.alpha(0.6).restart();
 
     return () => { simulation.stop(); };
-  }, [nodes, links]);
+  }, [nodes, links, nodeRadius]);
 
   function getViewBox() {
     const minX = Math.min(...animatedNodes.map((n) => n.x as number)) - nodeRadius;
@@ -97,7 +99,6 @@ export default function MemberGraph() {
 
   return (
     <div>
-      <h2>Team Graph</h2>
       {team.size > 1
         ? (
           <svg width="100%" style={{ aspectRatio: 'auto', maxWidth: '500px' }} viewBox={getViewBox()}>

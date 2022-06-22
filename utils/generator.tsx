@@ -1,5 +1,7 @@
 /* eslint-disable prefer-destructuring */
 /* eslint-disable no-plusplus */
+import { v4 as genID } from 'uuid';
+
 export function GroupScoreSum(strengths: number[]): number {
   return strengths.reduce((v, acc) => v + acc, 0);
 }
@@ -19,37 +21,56 @@ export class Matcher {
 
   private computeGroupScore: ((_: number[]) => number) = GroupScoreSum;
 
-  static match(scoreGrid:number[][], groupSize: number, groupScore = GroupScoreSum): Array<Array<Array<number>>> {
-    return new Matcher(scoreGrid, groupSize, groupScore).match();
+  private alternateGroupSizeFilter: ((_: number) => boolean);
+
+  static match(
+    scoreGrid:number[][],
+    groupSize: number,
+    groupScore = GroupScoreSum,
+    alternateGroupSizeFilter = ((_: number) => true),
+  ): Matcher {
+    return new Matcher(scoreGrid, groupSize, groupScore, alternateGroupSizeFilter);
   }
 
-  private constructor(scoreGrid:number[][], groupSize: number, computeGroupScore: ((_: number[]) => number)) {
+  private constructor(
+    scoreGrid:number[][],
+    groupSize: number,
+    computeGroupScore: ((_: number[]) => number),
+    alternateGroupSizeFilter: ((_: number) => boolean),
+  ) {
     this.scoreGrid = scoreGrid;
     this.groupSize = groupSize;
     this.bestScore = Number.POSITIVE_INFINITY;
     this.bestMatches = [];
     this.computeGroupScore = computeGroupScore;
+    this.alternateGroupSizeFilter = alternateGroupSizeFilter;
   }
 
-  private match(): Array<Array<Array<number>>> {
+  public* match(): Generator<unknown, any, unknown> {
     const allIndices = new Array(this.scoreGrid.length).fill(0).map((_, i:number) => i);
-    this.matchRecursive(allIndices, [], 0);
+    yield* this.matchRecursive(allIndices, [], 0);
+  }
+
+  public getBestMatches(): Array<Array<Array<number>>> {
     return this.bestMatches;
   }
 
-  private computeGroupSizes(remainingMembers: number): number[] {
-    if (remainingMembers % this.groupSize === 0) {
-      return [this.groupSize];
-    } if (this.groupSize === 2) {
-      return [2, 3];
+  private* computeGroupSizes(remainingMembers: number): Generator<number, any, undefined> {
+    const diff = remainingMembers % this.groupSize;
+    for (let i = this.groupSize + diff; i >= Math.max(this.groupSize - diff, 1); i--) {
+      if (this.alternateGroupSizeFilter(i)) {
+        yield i;
+      }
     }
-    // return [] // TODO
-    throw new Error('not implemented');
   }
 
-  private matchRecursive(remIndices: Array<number>, partialMatch: Array<Array<number>>, partialScore: number) {
-    const groupSizes = this.computeGroupSizes(remIndices.length);
-    for (let g = groupSizes.length; g >= 0; g--) {
+  private* matchRecursive(
+    remIndices: Array<number>,
+    partialMatch: Array<Array<number>>,
+    partialScore: number,
+  ): Generator<unknown, any, unknown> {
+    const groupSizes = [...this.computeGroupSizes(remIndices.length)];
+    for (let g = groupSizes.length - 1; g >= 0; g--) {
       const groupSize = groupSizes[g];
       const maxGroupIndex = groupSize - 1;
       const currGroup = new Array<number>(groupSize);
@@ -77,7 +98,7 @@ export class Matcher {
               this.bestMatches.push(currMatch);
               // console.log('%s -> %d', currMatch.map((group) => `(${group.join(', ')})`).join(' | '), currScore);
             } else {
-              this.matchRecursive(remIndices.filter((v) => !resolvedGroup.includes(v)), currMatch, currScore);
+              yield* this.matchRecursive(remIndices.filter((v) => !resolvedGroup.includes(v)), currMatch, currScore);
             }
           } else {
             // initialize the member to the right, travel to the right
@@ -88,6 +109,7 @@ export class Matcher {
           i--;
         }
       }
+      yield;
     }
   }
 
@@ -104,7 +126,63 @@ export class Matcher {
   }
 }
 
-export function matchTeam<T>(nodes: T[], connectedness: number[][], groupSize: number): T[][][] {
-  const matchedIndices = Matcher.match(connectedness, groupSize);
-  return matchedIndices.map((m) => m.map((g) => g.map((i) => nodes[i])));
+export interface MatchResult<Node> {
+  pairings: Node[][]
+  id: string
+}
+
+export interface MatcherRunner<Node> {
+  tick: (ms: number) => MatchResult<Node>[] | null
+}
+
+export function matchTeamTickable<T>(
+  nodes: T[],
+  connectedness: number[][],
+  groupSize: number,
+  alternateGroupSizes: number[],
+): MatcherRunner<T> {
+  const matcher = Matcher.match(
+    connectedness,
+    groupSize,
+    GroupScoreSum,
+    alternateGroupSizes.includes.bind(alternateGroupSizes),
+  );
+  const gen = matcher.match();
+
+  return ({
+    tick: (ms: number) => {
+      const before = Date.now();
+      // eslint-disable-next-line no-empty
+      do {
+        if ((Date.now() - before) < ms) {
+          return null;
+        }
+      } while ((gen.next().done !== true));
+      return matcher.getBestMatches().map((m) => ({
+        pairings: m.map((g) => g.map((i) => nodes[i])),
+        id: genID(),
+      }));
+    },
+  });
+}
+
+export function matchTeam<T>(
+  nodes: T[],
+  connectedness: number[][],
+  groupSize: number,
+  alternateGroupSizes: number[],
+): MatchResult<T>[] {
+  const matcher = Matcher.match(
+    connectedness,
+    groupSize,
+    GroupScoreSum,
+    alternateGroupSizes.includes.bind(alternateGroupSizes),
+  );
+  const gen = matcher.match();
+  // eslint-disable-next-line no-empty
+  while (!gen.next().done) {}
+  return matcher.getBestMatches().map((m) => ({
+    pairings: m.map((g) => g.map((i) => nodes[i])),
+    id: genID(),
+  }));
 }

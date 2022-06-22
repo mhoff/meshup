@@ -3,30 +3,36 @@
 import {
   Box,
   Button,
-  Card, Group, InputWrapper, List, NumberInput, RangeSlider, SimpleGrid, Text,
+  Card, Divider, InputWrapper, List, NumberInput, RangeSlider, SimpleGrid, Text,
 } from '@mantine/core';
 import { FormEvent, useCallback, useState } from 'react';
 import * as React from 'react';
 import { useTeamContext } from '../providers/team';
-import { matchTeam } from '../utils/generator';
+import { MatchResult, matchTeam } from '../utils/generator';
 import { Member } from '../models/team';
 
 export default function Pairing() {
   const { team } = useTeamContext();
   const [groupSize, setGroupSize] = useState(2);
   const [alternateGroupSizes, setAlternateGroupSizes] = useState<[number, number]>([0, 1]);
-  const [pairings, setPairings] = useState<Member[][][]>([]);
+  const [matches, setMatches] = useState<MatchResult<Member>[]>([]);
 
   const handleGeneratorSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setPairings(matchTeam(team.members, team.connectedness, groupSize));
+    const [lower, upper] = alternateGroupSizes;
+    setMatches(matchTeam<Member>(
+      team.members,
+      team.connectedness,
+      groupSize,
+      new Array(upper - lower + 1).fill(0).map((_, i) => lower + i),
+    ));
   };
 
   const handleAlternateGroupSizesInput = useCallback((value: [number, number]) => {
     let [lower, upper] = value;
     [lower, upper] = [
-      Math.max(Math.min(lower, groupSize), 0),
-      Math.min(Math.max(upper, groupSize), 100),
+      Math.max(Math.min(lower, groupSize), 1),
+      Math.min(Math.max(upper, groupSize), team.size - 1),
     ];
     upper = lower === upper ? upper + 1 : upper;
     setAlternateGroupSizes([
@@ -36,11 +42,10 @@ export default function Pairing() {
 
   React.useEffect(() => {
     handleAlternateGroupSizesInput([groupSize, groupSize + 1]);
-  }, [team, groupSize]);
+  }, [team, groupSize, handleAlternateGroupSizesInput]);
 
   return (
     <div>
-      <h2>Pairing Generator</h2>
       {team.size > 1 ? (
         <Box sx={{ maxWidth: 300 }} mx="0">
           <form onSubmit={handleGeneratorSubmit}>
@@ -69,9 +74,7 @@ export default function Pairing() {
               />
             </InputWrapper>
 
-            <Group position="right" mt="md">
-              <Button type="submit">Generate</Button>
-            </Group>
+            <Button type="submit" fullWidth>Generate</Button>
           </form>
         </Box>
       ) : (
@@ -79,7 +82,10 @@ export default function Pairing() {
           You need to enter more team members to generate meaningful pairings.
         </p>
       )}
-      {(pairings.length > 0)
+      {(matches.length > 0) && (
+        <Divider my="xs" label={`Showing ${matches.length} results`} labelPosition="center" />
+      )}
+      {(matches.length > 0 && matches.length < 1000)
         && (
         <SimpleGrid
           cols={3}
@@ -90,14 +96,14 @@ export default function Pairing() {
             { maxWidth: 600, cols: 1, spacing: 'sm' },
           ]}
         >
-          {pairings.map((pairing, pairingIndex) => (
+          {matches.map((match, matchIndex) => (
             // eslint-disable-next-line react/no-array-index-key
-            <Card key={`pairing-${pairingIndex}`} shadow="sm" p="lg">
-              <Text weight={500}>{`Pairing ${pairingIndex + 1}`}</Text>
+            <Card key={`pairing-${match.id}`} shadow="sm" p="lg">
+              <Text weight={500}>{`Pairing ${matchIndex + 1}`}</Text>
               <List>
-                {pairing.map((pair, pairIndex) => (
+                {match.pairings.map((pair, pairIndex) => (
                   // eslint-disable-next-line react/no-array-index-key
-                  <List.Item key={`pair-${pairIndex}`}>
+                  <List.Item key={`group-${pairIndex}`}>
                     {pair.map((member) => member.name).join(', ')}
                   </List.Item>
                 ))}

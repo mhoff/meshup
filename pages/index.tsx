@@ -36,15 +36,19 @@ export default function Home() {
         </p>
         <Grid justify="center" align="stretch" style={{ width: '100%' }}>
           <Grid.Col sm={12} md={6}>
+            <h2>Team Members</h2>
             <MemberList />
           </Grid.Col>
           <Grid.Col sm={12} md={6}>
+            <h2>Team Connectedness</h2>
             <ConnectionGrid />
           </Grid.Col>
           <Grid.Col sm={12} md={6}>
+            <h2>Pairing Generator</h2>
             <Pairing />
           </Grid.Col>
           <Grid.Col sm={12} md={6}>
+            <h2>Team Graph</h2>
             <MemberGraph />
           </Grid.Col>
         </Grid>
