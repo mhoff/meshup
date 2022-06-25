@@ -166,12 +166,11 @@ export function matchTeamTickable<T>(
   });
 }
 
-export function matchTeam<T>(
-  nodes: T[],
+export function matchTeam(
   connectedness: number[][],
   groupSize: number,
   alternateGroupSizes: number[],
-): MatchResult<T>[] {
+): number[][][] {
   const matcher = Matcher.match(
     connectedness,
     groupSize,
@@ -181,8 +180,12 @@ export function matchTeam<T>(
   const gen = matcher.match();
   // eslint-disable-next-line no-empty
   while (!gen.next().done) {}
-  return matcher.getBestMatches().map((m) => ({
-    pairings: m.map((g) => g.map((i) => nodes[i])),
+  return matcher.getBestMatches();
+}
+
+export function evalResult<T>(nodes: T[], match: number[][]): MatchResult<T> {
+  return {
+    pairings: match.map((g) => g.map((i) => nodes[i])),
     id: genID(),
-  }));
+  };
 }

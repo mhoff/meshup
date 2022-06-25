@@ -15,6 +15,7 @@
     "@mantine/form": "^4.2.9",
     "@mantine/hooks": "^4.2.9",
     "@mantine/next": "^4.2.9",
+    "comlink": "^4.3.1",
     "d3": "^7.4.4",
     "next": "12.1.6",
     "react": "18.1.0",
@@ -22,12 +23,13 @@
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "18.1.0",
     "tabler-icons-react": "^1.48.1",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "worker-plugin": "^5.0.1"
   },
   "devDependencies": {
     "@types/d3": "^7.4.0",
     "@types/node": "17.0.41",
-    "@types/react": "18.0.12",
+    "@types/react": "^18.0.14",
     "@types/react-dom": "18.0.5",
     "@types/uuid": "^8.3.4",
     "@typescript-eslint/eslint-plugin": "^5.28.0",

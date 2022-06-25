@@ -8,24 +8,32 @@ import {
 import { FormEvent, useCallback, useState } from 'react';
 import * as React from 'react';
 import { useTeamContext } from '../providers/team';
-import { MatchResult, matchTeam } from '../utils/generator';
+import { evalResult, MatchResult } from '../utils/generator';
 import { Member } from '../models/team';
+import useGeneratorWorker from '../pages/_app.hooks';
+import { MatchingRequest, MatchingResponse } from '../interfaces/generator';
 
 export default function Pairing() {
   const { team } = useTeamContext();
   const [groupSize, setGroupSize] = useState(2);
   const [alternateGroupSizes, setAlternateGroupSizes] = useState<[number, number]>([0, 1]);
   const [matches, setMatches] = useState<MatchResult<Member>[]>([]);
+  const [loading, setLoading] = useState<Boolean>(false);
+  const sendMatchingRequest = useGeneratorWorker((resp: any) => {
+    setLoading(false);
+    setMatches((resp.data as MatchingResponse).matches.map(evalResult<Member>.bind(undefined, team.members)));
+  });
 
   const handleGeneratorSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const [lower, upper] = alternateGroupSizes;
-    setMatches(matchTeam<Member>(
-      team.members,
-      team.connectedness,
+    const req: MatchingRequest = {
+      connectedness: team.connectedness,
       groupSize,
-      new Array(upper - lower + 1).fill(0).map((_, i) => lower + i),
-    ));
+      alternateGroupSizes: new Array(upper - lower + 1).fill(0).map((_, i) => lower + i),
+    };
+    setLoading(true);
+    sendMatchingRequest(req);
   };
 
   const handleAlternateGroupSizesInput = useCallback((value: [number, number]) => {
@@ -81,6 +89,9 @@ export default function Pairing() {
         <p>
           You need to enter more team members to generate meaningful pairings.
         </p>
+      )}
+      {(loading) && (
+        <span>Loading...</span>
       )}
       {(matches.length > 0) && (
         <Divider my="xs" label={`Showing ${matches.length} results`} labelPosition="center" />
