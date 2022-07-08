@@ -29,7 +29,7 @@ export default function MemberGraph() {
 
   // const svgRef = useRef<SVGSVGElement>(null);
 
-  const { team } = useTeamContext();
+  const { team, partitioning } = useTeamContext();
   const [animatedNodes, setAnimatedNodes] = useState<MemberNode[]>([]);
   const [animatedLinks, setAnimatedLinks] = useState<MemberLink[]>([]);
   const nodeRadius = useMemo(() => Math.max(...team.members.map((member) => member.name.length * 4), 25), [team]);
@@ -97,6 +97,15 @@ export default function MemberGraph() {
     return `${minX} ${minY} ${maxX - minX} ${maxY - minY}`;
   }
 
+  const nodeColors: (i: number) => string = useMemo(() => {
+    if (partitioning.length === 0) {
+      return (_: number) => '#CCC';
+    }
+    const nPartitions = Math.max(...partitioning);
+    // https://github.com/d3/d3-scale-chromatic
+    return (i: number) => d3.interpolateWarm(partitioning[i] / nPartitions);
+  }, [partitioning]);
+
   return (
     <div>
       {team.size > 1
@@ -116,9 +125,9 @@ export default function MemberGraph() {
                 />
               ))}
             </g>
-            {animatedNodes.map((node) => (
+            {animatedNodes.map((node, i) => (
               <g className="node" transform={`translate(${node.x}, ${node.y})`} key={node.id}>
-                <circle fill="#CCC" r={node.r} />
+                <circle fill={nodeColors(i)} r={node.r} />
                 <text y={5} fill="black" fontSize={13} textAnchor="middle">{node.name}</text>
               </g>
             ))}

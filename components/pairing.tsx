@@ -2,38 +2,38 @@
 
 import {
   Box,
-  Button,
-  Card, Divider, InputWrapper, List, NumberInput, RangeSlider, SimpleGrid, Text,
+  Button, InputWrapper, NumberInput, RangeSlider,
 } from '@mantine/core';
 import { FormEvent, useCallback, useState } from 'react';
 import * as React from 'react';
 import { useTeamContext } from '../providers/team';
-import { evalResult, MatchResult } from '../utils/generator';
-import { Member } from '../models/team';
-import useGeneratorWorker from '../pages/_app.hooks';
-import { MatchingRequest, MatchingResponse } from '../interfaces/generator';
+// import usePartitioner from '../pages/_app.hooks';
+// import { PartitioningRequest, PartitioningResponse } from '../interfaces/generator';
+import partition from '../utils/solver';
 
 export default function Pairing() {
-  const { team } = useTeamContext();
+  const { team, setPartitioning } = useTeamContext();
   const [groupSize, setGroupSize] = useState(2);
   const [alternateGroupSizes, setAlternateGroupSizes] = useState<[number, number]>([0, 1]);
-  const [matches, setMatches] = useState<MatchResult<Member>[]>([]);
   const [loading, setLoading] = useState<Boolean>(false);
-  const sendMatchingRequest = useGeneratorWorker((resp: any) => {
-    setLoading(false);
-    setMatches((resp.data as MatchingResponse).matches.map(evalResult<Member>.bind(undefined, team.members)));
-  });
 
-  const handleGeneratorSubmit = (e: FormEvent<HTMLFormElement>) => {
+  // const setPartitioningRequest = usePartitioner((resp: any) => {
+  //   setLoading(false);
+  //   setPartitioning((resp.data as PartitioningResponse).partitions);
+  // });
+
+  const handleGeneratorSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const [lower, upper] = alternateGroupSizes;
-    const req: MatchingRequest = {
-      connectedness: team.connectedness,
-      groupSize,
-      alternateGroupSizes: new Array(upper - lower + 1).fill(0).map((_, i) => lower + i),
-    };
+    // const [lower, upper] = alternateGroupSizes;
+    // const req: PartitioningRequest = {
+    //   connectedness: team.connectedness,
+    //   groupSize,
+    //   alternateGroupSizes: [], // new Array(upper - lower + 1).fill(0).map((_, i) => lower + i),
+    // };
     setLoading(true);
-    sendMatchingRequest(req);
+    // setPartitioningRequest(req);
+    setPartitioning(await partition(team.connectedness, Math.round(team.size / groupSize)));
+    setLoading(false);
   };
 
   const handleAlternateGroupSizesInput = useCallback((value: [number, number]) => {
@@ -93,36 +93,6 @@ export default function Pairing() {
       {(loading) && (
         <span>Loading...</span>
       )}
-      {(matches.length > 0) && (
-        <Divider my="xs" label={`Showing ${matches.length} results`} labelPosition="center" />
-      )}
-      {(matches.length > 0 && matches.length < 1000)
-        && (
-        <SimpleGrid
-          cols={3}
-          spacing="lg"
-          breakpoints={[
-            { maxWidth: 980, cols: 3, spacing: 'md' },
-            { maxWidth: 755, cols: 2, spacing: 'sm' },
-            { maxWidth: 600, cols: 1, spacing: 'sm' },
-          ]}
-        >
-          {matches.map((match, matchIndex) => (
-            // eslint-disable-next-line react/no-array-index-key
-            <Card key={`pairing-${match.id}`} shadow="sm" p="lg">
-              <Text weight={500}>{`Pairing ${matchIndex + 1}`}</Text>
-              <List>
-                {match.pairings.map((pair, pairIndex) => (
-                  // eslint-disable-next-line react/no-array-index-key
-                  <List.Item key={`group-${pairIndex}`}>
-                    {pair.map((member) => member.name).join(', ')}
-                  </List.Item>
-                ))}
-              </List>
-            </Card>
-          ))}
-        </SimpleGrid>
-        )}
     </div>
   );
 }

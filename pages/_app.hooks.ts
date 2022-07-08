@@ -1,20 +1,20 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { MatchingRequest, MatchingResponse } from '../interfaces/generator';
+import { PartitioningRequest, PartitioningResponse } from '../interfaces/generator';
 
-export default function useGeneratorWorker(receiveMatches: (_: MatchingResponse) => void) {
+export default function useSolverWorker(receiveMatches: (_: PartitioningResponse) => void) {
   const workerRef: any = useRef();
 
   useEffect(() => {
     workerRef.current = new Worker(
-      new URL('../workers/generator.worker.ts', import.meta.url),
+      new URL('../workers/solver.worker.ts', import.meta.url),
     );
-    workerRef.current.onmessage = (evt: any) => receiveMatches(evt as MatchingResponse);
+    workerRef.current.onmessage = (evt: any) => receiveMatches(evt as PartitioningResponse);
     return () => {
       workerRef.current.terminate();
     };
   }, []);
 
-  const sendMatcherRequest = useCallback((req: MatchingRequest) => {
+  const sendMatcherRequest = useCallback((req: PartitioningRequest) => {
     workerRef.current.postMessage(req);
   }, []);
 

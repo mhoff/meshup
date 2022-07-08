@@ -41,7 +41,8 @@ export function appendTeam(team: Team, newMemberName: string): Team {
       name: newMemberName,
       id: genID(),
     }],
-    connectedness: [...team.connectedness.map((row) => row.concat([0])), []],
+    connectedness: [new Array<number>(team.size).fill(0), ...team.connectedness],
+    // [...team.connectedness.map((row) => row.concat([0])), []],
   };
 }
 

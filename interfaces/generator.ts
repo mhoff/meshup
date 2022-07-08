@@ -1,9 +1,9 @@
-export interface MatchingRequest {
+export interface PartitioningRequest {
     connectedness: number[][],
     groupSize: number,
     alternateGroupSizes: number[],
 }
 
-export interface MatchingResponse {
-    matches: number[][][];
+export interface PartitioningResponse {
+    partitions: number[];
 }
