@@ -25,7 +25,9 @@ export default function ConnectionsPage() {
       >
         <div>
           <Title order={4}>Team Members</Title>
-          <ConnectionGrid />
+          <div style={{ overflow: 'auto' }}>
+            <ConnectionGrid />
+          </div>
         </div>
         <div>
           <Title order={4}>Visualization</Title>

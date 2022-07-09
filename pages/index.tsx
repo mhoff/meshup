@@ -41,7 +41,9 @@ export default function Home() {
           </Grid.Col>
           <Grid.Col sm={12} md={6}>
             <h2>Team Connectedness</h2>
-            <ConnectionGrid />
+            <div style={{ overflow: 'auto' }}>
+              <ConnectionGrid />
+            </div>
           </Grid.Col>
           <Grid.Col sm={12} md={6}>
             <h2>Pairing Generator</h2>
