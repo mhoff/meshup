@@ -12,7 +12,9 @@ import { useTeamContext } from '../providers/team';
 import partition from '../utils/solver';
 
 export default function Pairing() {
-  const { team, setPartitions: setPartitioning } = useTeamContext();
+  const {
+    team, members, partitions, setPartitions,
+  } = useTeamContext();
   const [groupSize, setGroupSize] = useState(2);
   const [alternateGroupSizes, setAlternateGroupSizes] = useState<[number, number]>([0, 1]);
   const [loading, setLoading] = useState<Boolean>(false);
@@ -32,7 +34,7 @@ export default function Pairing() {
     // };
     setLoading(true);
     // setPartitioningRequest(req);
-    setPartitioning(await partition(team.connectedness, Math.round(team.size / groupSize)));
+    setPartitions(await partition(team.connectedness, Math.round(team.size / groupSize)));
     setLoading(false);
   };
 
@@ -92,6 +94,21 @@ export default function Pairing() {
       )}
       {(loading) && (
         <span>Loading...</span>
+      )}
+      {(partitions.length > 0) && (
+        <ul>
+          {[...new Set(partitions)].map((p) => (
+            <li key={p}>
+              {
+                partitions
+                  .map((p2, i) => [p2, i])
+                  .filter(([p2, _]) => p2 === p)
+                  .map(([_, i]) => members[i].name)
+                  .join(', ')
+              }
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
