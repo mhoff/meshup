@@ -49,7 +49,7 @@ export default function Home() {
           </Grid.Col>
           <Grid.Col sm={12} md={6}>
             <h2>Team Graph</h2>
-            <MemberGraph />
+            <MemberGraph maxWidth={500} />
           </Grid.Col>
         </Grid>
       </main>

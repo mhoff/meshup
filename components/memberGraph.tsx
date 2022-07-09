@@ -19,7 +19,12 @@ interface MemberLink extends d3.SimulationLinkDatum<MemberNode> {
   strength: number
 }
 
-export default function MemberGraph() {
+interface MemberGraphProps {
+  maxWidth?: number
+}
+
+export default function MemberGraph(props: MemberGraphProps) {
+  const { maxWidth = null } = props;
   const minDistBetweenNodes = 5;
   const linkColorMap = [
     'red', // strength <0
@@ -110,7 +115,15 @@ export default function MemberGraph() {
     <div>
       {team.size > 1
         ? (
-          <svg width="100%" style={{ aspectRatio: 'auto', maxWidth: '500px' }} viewBox={getViewBox()}>
+          <svg
+            width="100%"
+            style={{
+              aspectRatio: 'auto',
+              maxHeight: '80vh', // TODO
+              ...(maxWidth !== null ? { maxWidth: `${maxWidth}px` } : {}),
+            }}
+            viewBox={getViewBox()}
+          >
             <g strokeOpacity={0.8}>
               {animatedLinks.map((link) => (
                 <line
@@ -136,3 +149,7 @@ export default function MemberGraph() {
     </div>
   );
 }
+
+MemberGraph.defaultProps = {
+  maxWidth: null,
+};

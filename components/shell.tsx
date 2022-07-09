@@ -16,7 +16,7 @@ import {
 import * as React from 'react';
 import { useRef, useState } from 'react';
 import {
-  UserPlus, Affiliate, Stack2, GridDots, DeviceFloppy, Download, Upload,
+  UserPlus, Affiliate, Stack2, GridDots, DeviceFloppy, Download, Upload, LayoutDashboard,
 } from 'tabler-icons-react';
 import Link from 'next/link';
 import { showNotification } from '@mantine/notifications';
@@ -25,6 +25,9 @@ import { exportJSON, saveToStorage } from '../utils/persistence';
 import { useTeamContext } from '../providers/team';
 
 const navItems = [
+  {
+    icon: <LayoutDashboard size={16} />, color: 'blue', label: 'Overview', path: '/',
+  },
   {
     icon: <UserPlus size={16} />, color: 'blue', label: 'Members', path: '/members',
   },

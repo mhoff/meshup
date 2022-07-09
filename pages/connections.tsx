@@ -29,7 +29,7 @@ export default function ConnectionsPage() {
         </div>
         <div>
           <Title order={4}>Visualization</Title>
-          <MemberGraph />
+          <MemberGraph maxWidth={500} />
         </div>
       </SimpleGrid>
     </div>
