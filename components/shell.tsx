@@ -11,13 +11,15 @@ import {
   Group,
   ThemeIcon,
   Title,
+  Divider,
 } from '@mantine/core';
 import * as React from 'react';
 import { useState } from 'react';
 import {
-  UserPlus, Affiliate, Stack2, GridDots,
+  UserPlus, Affiliate, Stack2, GridDots, DeviceFloppy, Download, Upload
 } from 'tabler-icons-react';
 import Link from 'next/link';
+import PersistenceControl from './persistence';
 
 const navItems = [
   {
@@ -32,11 +34,27 @@ const navItems = [
   {
     icon: <Stack2 size={16} />, color: 'blue', label: 'Groups', path: '/groups',
   },
+  {
+    icon: <DeviceFloppy size={16} />, color: 'blue', label: 'Load/Save', path: '/persistence',
+  },
 ];
 
 export default function Shell({ children }: { children: any }) {
   const theme = useMantineTheme();
   const [opened, setOpened] = useState(false);
+
+  const buttonStyle = {
+    display: 'block',
+    width: '100%',
+    padding: theme.spacing.xs,
+    borderRadius: theme.radius.sm,
+    color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
+
+    '&:hover': {
+      backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
+    },
+  };
+
   return (
     <AppShell
       styles={{
@@ -49,7 +67,7 @@ export default function Shell({ children }: { children: any }) {
       fixed
       navbar={(
         <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{ sm: 180, lg: 180 }}>
-          <Navbar.Section grow mt="md">
+          <Navbar.Section mt="md">
             {navItems.map((item) => (
               <Link
                 href={item.path}
@@ -60,18 +78,7 @@ export default function Shell({ children }: { children: any }) {
                   onClick={(() => setOpened(false))}
                 >
                   <UnstyledButton
-                    sx={({
-                      display: 'block',
-                      width: '100%',
-                      padding: theme.spacing.xs,
-                      borderRadius: theme.radius.sm,
-                      color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
-
-                      '&:hover': {
-                        backgroundColor:
-                          theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
-                      },
-                    })}
+                    sx={buttonStyle}
                   >
                     <Group>
                       <ThemeIcon color={item.color} variant="light">
@@ -83,6 +90,22 @@ export default function Shell({ children }: { children: any }) {
                 </a>
               </Link>
             ))}
+          </Navbar.Section>
+          <Divider />
+          <Navbar.Section mt="md">
+            <PersistenceControl />
+            <Group>
+              <UnstyledButton>
+                <ThemeIcon color="blue" variant="light">
+                  <Download size={16} />
+                </ThemeIcon>
+              </UnstyledButton>
+              <UnstyledButton>
+                <ThemeIcon color="blue" variant="light">
+                  <Upload size={16} />
+                </ThemeIcon>
+              </UnstyledButton>
+            </Group>
           </Navbar.Section>
         </Navbar>
       )}
