@@ -2,6 +2,7 @@
 
 import {
   useState, useEffect, useMemo,
+  useRef,
 } from 'react';
 import * as d3 from 'd3';
 import * as React from 'react';
@@ -34,7 +35,8 @@ export default function MemberGraph(props: MemberGraphProps) {
 
   // const svgRef = useRef<SVGSVGElement>(null);
 
-  const { team, partitions: partitioning } = useTeamContext();
+  const { team, members, partitions: partitioning } = useTeamContext();
+  const simulationRef = useRef<d3.Simulation<MemberNode, MemberLink> | null>(null);
   const [animatedNodes, setAnimatedNodes] = useState<MemberNode[]>([]);
   const [animatedLinks, setAnimatedLinks] = useState<MemberLink[]>([]);
   const nodeRadius = useMemo(() => Math.max(...team.members.map((member) => member.name.length * 4), 25), [team]);
@@ -54,7 +56,7 @@ export default function MemberGraph(props: MemberGraphProps) {
       };
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [team, nodeRadius],
+    [members, nodeRadius],
   );
 
   const links = useMemo(
@@ -68,6 +70,11 @@ export default function MemberGraph(props: MemberGraphProps) {
   );
 
   useEffect(() => {
+    if (simulationRef.current != null) {
+      // TODO does this really help when quickly re-running useEffects?
+      simulationRef.current.stop();
+    }
+
     const linkSimulation = d3.forceLink<MemberNode, MemberLink>();
     linkSimulation.strength(((link) => (link.strength < 0 ? link.strength * 0.002 : link.strength * 0.01)));
     linkSimulation.distance(0);
@@ -89,6 +96,7 @@ export default function MemberGraph(props: MemberGraphProps) {
       });
 
     simulation.alpha(0.6).restart();
+    simulationRef.current = simulation;
 
     return () => { simulation.stop(); };
   }, [nodes, links, nodeRadius]);
