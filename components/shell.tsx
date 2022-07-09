@@ -125,7 +125,7 @@ export default function Shell({ children }: { children: any }) {
               </Link>
             ))}
           </Navbar.Section>
-          <Divider />
+          <Divider style={{ marginTop: '16px' }} />
           <Navbar.Section mt="md">
             {persistenceItems.map((item) => (
               <UnstyledButton
