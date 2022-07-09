@@ -14,12 +14,15 @@ import {
   Divider,
 } from '@mantine/core';
 import * as React from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
-  UserPlus, Affiliate, Stack2, GridDots, DeviceFloppy, Download, Upload
+  UserPlus, Affiliate, Stack2, GridDots, DeviceFloppy, Download, Upload,
 } from 'tabler-icons-react';
 import Link from 'next/link';
-import PersistenceControl from './persistence';
+import { showNotification } from '@mantine/notifications';
+import Importer from './persistence';
+import { exportJSON, saveToStorage } from '../utils/persistence';
+import { useTeamContext } from '../providers/team';
 
 const navItems = [
   {
@@ -34,14 +37,42 @@ const navItems = [
   {
     icon: <Stack2 size={16} />, color: 'blue', label: 'Groups', path: '/groups',
   },
-  {
-    icon: <DeviceFloppy size={16} />, color: 'blue', label: 'Load/Save', path: '/persistence',
-  },
 ];
 
 export default function Shell({ children }: { children: any }) {
   const theme = useMantineTheme();
+  const {
+    team, setTeam, partitions, setPartitions,
+  } = useTeamContext();
   const [opened, setOpened] = useState(false);
+  const openFileRef = useRef<() => void>() as React.MutableRefObject<() => void>;
+
+  const persistenceItems = [
+    {
+      icon: <Download size={16} />,
+      color: 'blue',
+      label: 'Export',
+      handler: () => exportJSON('default', { team, partitions }),
+    },
+    {
+      icon: <Upload size={16} />,
+      color: 'blue',
+      label: 'Import',
+      handler: () => openFileRef.current(),
+    },
+    {
+      icon: <DeviceFloppy size={16} />,
+      color: 'blue',
+      label: 'Browser',
+      handler: () => {
+        saveToStorage('default', { team, partitions });
+        showNotification({
+          title: 'Save Successful',
+          message: 'Saved your configuration to local browser storage.',
+        });
+      },
+    },
+  ];
 
   const buttonStyle = {
     display: 'block',
@@ -93,19 +124,21 @@ export default function Shell({ children }: { children: any }) {
           </Navbar.Section>
           <Divider />
           <Navbar.Section mt="md">
-            <PersistenceControl />
-            <Group>
-              <UnstyledButton>
-                <ThemeIcon color="blue" variant="light">
-                  <Download size={16} />
-                </ThemeIcon>
+            {persistenceItems.map((item) => (
+              <UnstyledButton
+                sx={buttonStyle}
+                onClick={item.handler}
+                key={item.label}
+              >
+                <Group>
+                  <ThemeIcon color={item.color} variant="light">
+                    {item.icon}
+                  </ThemeIcon>
+                  <Text size="sm">{item.label}</Text>
+                </Group>
               </UnstyledButton>
-              <UnstyledButton>
-                <ThemeIcon color="blue" variant="light">
-                  <Upload size={16} />
-                </ThemeIcon>
-              </UnstyledButton>
-            </Group>
+            ))}
+            <Importer setTeam={setTeam} setPartitions={setPartitions} openFileRef={openFileRef} />
           </Navbar.Section>
         </Navbar>
       )}

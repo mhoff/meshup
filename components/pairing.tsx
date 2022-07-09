@@ -12,7 +12,7 @@ import { useTeamContext } from '../providers/team';
 import partition from '../utils/solver';
 
 export default function Pairing() {
-  const { team, setPartitioning } = useTeamContext();
+  const { team, setPartitions: setPartitioning } = useTeamContext();
   const [groupSize, setGroupSize] = useState(2);
   const [alternateGroupSizes, setAlternateGroupSizes] = useState<[number, number]>([0, 1]);
   const [loading, setLoading] = useState<Boolean>(false);

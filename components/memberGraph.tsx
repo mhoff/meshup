@@ -29,7 +29,7 @@ export default function MemberGraph() {
 
   // const svgRef = useRef<SVGSVGElement>(null);
 
-  const { team, partitioning } = useTeamContext();
+  const { team, partitions: partitioning } = useTeamContext();
   const [animatedNodes, setAnimatedNodes] = useState<MemberNode[]>([]);
   const [animatedLinks, setAnimatedLinks] = useState<MemberLink[]>([]);
   const nodeRadius = useMemo(() => Math.max(...team.members.map((member) => member.name.length * 4), 25), [team]);

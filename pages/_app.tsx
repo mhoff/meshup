@@ -2,6 +2,7 @@ import '../styles/globals.css';
 import type { AppProps } from 'next/app';
 import { MantineProvider } from '@mantine/core';
 import * as React from 'react';
+import { NotificationsProvider } from '@mantine/notifications';
 import { TeamProvider } from '../providers/team';
 import Shell from '../components/shell';
 
@@ -15,12 +16,14 @@ function MyApp({ Component, pageProps }: AppProps) {
         colorScheme: 'light',
       }}
     >
-      <TeamProvider>
-        <Shell>
-          {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-          <Component {...pageProps} />
-        </Shell>
-      </TeamProvider>
+      <NotificationsProvider>
+        <TeamProvider>
+          <Shell>
+            {/* eslint-disable-next-line react/jsx-props-no-spreading */}
+            <Component {...pageProps} />
+          </Shell>
+        </TeamProvider>
+      </NotificationsProvider>
     </MantineProvider>
   );
 }
