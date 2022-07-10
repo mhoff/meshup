@@ -1,11 +1,10 @@
-// import '../styles/globals.css'
-
 import { useState } from 'react';
 import {
   Table, Center, Button,
 } from '@mantine/core';
 import { Plus, Minus, Icon } from 'tabler-icons-react';
 import * as React from 'react';
+import styles from './ConnectionGrid.module.css';
 import { useTeamContext } from '../providers/team';
 import {
   getConnection, updateConnectedness,
@@ -31,30 +30,13 @@ export default function ConnectionGrid() {
   const { team, setTeam } = useTeamContext();
   const [mode, setMode] = useState<number>(0);
 
-  const rowStyle: React.CSSProperties = {
-    maxWidth: '100px',
-    overflowWrap: 'break-word',
-    wordBreak: 'break-word',
-    textAlign: 'center',
-    hyphens: 'auto',
-  };
-
-  const headerStyle: React.CSSProperties = {
-    maxWidth: '100px',
-    overflowWrap: 'break-word',
-    wordBreak: 'break-word',
-    textAlign: 'center',
-    verticalAlign: 'bottom',
-    hyphens: 'auto',
-  };
-
   return (
     <div>
       {team.size > 1 ? (
         <Table verticalSpacing={4} sx={{ '& tbody tr td': { borderBottom: 0 } }}>
           <thead>
             <tr>
-              <th style={headerStyle}>
+              <th className={styles.colHeader}>
                 <Center>
                   <Button
                     compact
@@ -69,7 +51,7 @@ export default function ConnectionGrid() {
                 </Center>
               </th>
               {team.members.map((member, index) => (
-                <th key={`col-${member.id}`} style={headerStyle}>
+                <th key={`col-${member.id}`} className={styles.colHeader}>
                   {member.name}
                 </th>
               ))}
@@ -78,7 +60,7 @@ export default function ConnectionGrid() {
           <tbody>
             {team.members.map((rowMember, rowIndex) => (
               <tr key={`row-${rowMember.id}`}>
-                <td style={rowStyle}>
+                <td className={styles.rowHeader}>
                   <Center>
                     {rowMember.name}
                   </Center>
