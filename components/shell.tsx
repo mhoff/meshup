@@ -16,13 +16,14 @@ import {
 import * as React from 'react';
 import { useRef, useState } from 'react';
 import {
-  UserPlus, Affiliate, Stack2, GridDots, DeviceFloppy, Download, Upload, LayoutDashboard,
+  UserPlus, Affiliate, Stack2, GridDots, DeviceFloppy, Download, Upload, LayoutDashboard, Trash,
 } from 'tabler-icons-react';
 import Link from 'next/link';
 import { showNotification } from '@mantine/notifications';
 import Importer from './persistence';
-import { exportJSON, saveToStorage } from '../utils/persistence';
+import { deleteStorage, exportJSON, saveToStorage } from '../utils/persistence';
 import { useTeamContext } from '../providers/team';
+import { EMPTY_TEAM } from '../models/team';
 
 const navItems = [
   {
@@ -66,12 +67,28 @@ export default function Shell({ children }: { children: any }) {
     {
       icon: <DeviceFloppy size={16} />,
       color: 'blue',
-      label: 'Browser',
+      label: 'Save',
       handler: () => {
         saveToStorage('default', { team, partitions });
         showNotification({
           title: 'Save Successful',
           message: 'Saved your configuration to local browser storage.',
+          icon: <DeviceFloppy size={16} />,
+        });
+      },
+    },
+    {
+      icon: <Trash size={16} />,
+      color: 'blue',
+      label: 'Delete',
+      handler: () => {
+        deleteStorage('default');
+        setPartitions([]);
+        setTeam(EMPTY_TEAM);
+        showNotification({
+          title: 'Delete Successful',
+          message: 'Deleted stored configuration.',
+          icon: <Trash size={16} />,
         });
       },
     },

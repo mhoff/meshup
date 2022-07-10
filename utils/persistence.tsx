@@ -24,3 +24,7 @@ export function loadFromStorage(key: string) {
   const blob = localStorage.getItem(key);
   return blob === null ? null : JSON.parse(blob);
 }
+
+export function deleteStorage(key: string) {
+  localStorage.removeItem(key);
+}
