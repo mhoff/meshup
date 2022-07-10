@@ -31,15 +31,33 @@ export default function ConnectionGrid() {
   const { team, setTeam } = useTeamContext();
   const [mode, setMode] = useState<number>(0);
 
+  const rowStyle: React.CSSProperties = {
+    maxWidth: '100px',
+    overflowWrap: 'break-word',
+    wordBreak: 'break-word',
+    textAlign: 'center',
+    hyphens: 'auto',
+  };
+
+  const headerStyle: React.CSSProperties = {
+    maxWidth: '100px',
+    overflowWrap: 'break-word',
+    wordBreak: 'break-word',
+    textAlign: 'center',
+    verticalAlign: 'bottom',
+    hyphens: 'auto',
+  };
+
   return (
     <div>
       {team.size > 1 ? (
         <Table verticalSpacing={4} sx={{ '& tbody tr td': { borderBottom: 0 } }}>
           <thead>
             <tr>
-              <th>
+              <th style={headerStyle}>
                 <Center>
                   <Button
+                    compact
                     onClick={() => setMode((mode + 1) % Modes.length)}
                     color={Modes[mode].color}
                   >
@@ -51,10 +69,8 @@ export default function ConnectionGrid() {
                 </Center>
               </th>
               {team.members.map((member, index) => (
-                <th key={`col-${member.id}`}>
-                  <Center>
-                    {member.name}
-                  </Center>
+                <th key={`col-${member.id}`} style={headerStyle}>
+                  {member.name}
                 </th>
               ))}
             </tr>
@@ -62,7 +78,7 @@ export default function ConnectionGrid() {
           <tbody>
             {team.members.map((rowMember, rowIndex) => (
               <tr key={`row-${rowMember.id}`}>
-                <td>
+                <td style={rowStyle}>
                   <Center>
                     {rowMember.name}
                   </Center>
