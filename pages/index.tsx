@@ -35,23 +35,23 @@ export default function Home() {
           Also please avoid large connection strengths (roughly bigger than 5).
         </p>
         <Grid justify="center" align="stretch" style={{ width: '100%' }}>
-          <Grid.Col sm={12} md={6}>
+          <Grid.Col sm={12} md={2}>
             <h2>Team Members</h2>
             <MemberList />
           </Grid.Col>
-          <Grid.Col sm={12} md={6}>
+          <Grid.Col sm={12} md={10}>
             <h2>Team Connectedness</h2>
             <div style={{ overflow: 'auto' }}>
               <ConnectionGrid />
             </div>
           </Grid.Col>
-          <Grid.Col sm={12} md={6}>
+          <Grid.Col sm={12} md={2}>
             <h2>Pairing Generator</h2>
             <Pairing />
           </Grid.Col>
-          <Grid.Col sm={12} md={6}>
+          <Grid.Col sm={12} md={10}>
             <h2>Team Graph</h2>
-            <MemberGraph maxWidth={500} />
+            <MemberGraph />
           </Grid.Col>
         </Grid>
       </main>

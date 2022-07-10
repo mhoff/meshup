@@ -17,7 +17,7 @@ export default function ConnectionsPage() {
         or a decrement (-).
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-        <div style={{ flexGrow: 0, maxWidth: '100%' }}>
+        <div style={{ maxWidth: '100%' }}>
           <Title order={4}>Team Members</Title>
           <div style={{ overflow: 'auto' }}>
             <ConnectionGrid />
