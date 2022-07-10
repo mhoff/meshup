@@ -1,4 +1,4 @@
-import { SimpleGrid, Title } from '@mantine/core';
+import { Title } from '@mantine/core';
 import * as React from 'react';
 import ConnectionGrid from '../components/connectionGrid';
 import MemberGraph from '../components/memberGraph';
@@ -16,24 +16,18 @@ export default function ConnectionsPage() {
         The icon in the top left indicates whether the click will produce an increment (+)
         or a decrement (-).
       </p>
-      <SimpleGrid
-        cols={2}
-        spacing="lg"
-        breakpoints={[
-          { maxWidth: 930, cols: 1, spacing: 'lg' },
-        ]}
-      >
-        <div>
+      <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+        <div style={{ flexGrow: 0, maxWidth: '100%' }}>
           <Title order={4}>Team Members</Title>
           <div style={{ overflow: 'auto' }}>
             <ConnectionGrid />
           </div>
         </div>
-        <div>
+        <div style={{ flexGrow: 1 }}>
           <Title order={4}>Visualization</Title>
           <MemberGraph />
         </div>
-      </SimpleGrid>
+      </div>
     </div>
   );
 }

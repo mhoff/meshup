@@ -32,7 +32,7 @@ export default function ConnectionGrid() {
   const [mode, setMode] = useState<number>(0);
 
   return (
-    <div style={{ maxWidth: '400px' }}>
+    <div>
       {team.size > 1 ? (
         <Table verticalSpacing={4} sx={{ '& tbody tr td': { borderBottom: 0 } }}>
           <thead>
