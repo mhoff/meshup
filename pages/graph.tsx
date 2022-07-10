@@ -7,7 +7,7 @@ export default function GraphPage() {
     <div>
       <Title order={2}>Connection Graph</Title>
       <p>
-        This graph visualizes your team with the configured connections strenghts.
+        This graph visualizes your team with the configured connections strengths.
       </p>
       <MemberGraph />
     </div>
