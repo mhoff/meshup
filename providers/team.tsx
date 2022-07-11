@@ -1,8 +1,9 @@
 import { createContext, useContext, useMemo } from 'react';
 import * as React from 'react';
-import { showNotification } from '@mantine/notifications';
 import { EMPTY_TEAM, Member, Team } from '../models/team';
 import { loadFromStorage } from '../utils/persistence';
+import { arraysEqual } from '../utils/helpers';
+import { notifyLoadedInitial, notifyResetPartitions } from '../utils/notifications';
 
 type TeamContextType = {
     team: Team
@@ -20,7 +21,13 @@ export function TeamProvider({ children }: { children: any }) {
   const teamContext = useMemo<TeamContextType>(() => ({
     team,
     members: team.members,
-    setTeam: (newTeam: Team) => dispatchTeam(newTeam),
+    setTeam: (newTeam: Team) => {
+      if (partitions.length > 0 && !arraysEqual(team.connectedness, newTeam.connectedness)) {
+        notifyResetPartitions();
+        dispatchPartitions([]);
+      }
+      dispatchTeam(newTeam);
+    },
     partitions,
     setPartitions: dispatchPartitions,
   }), [team, partitions]);
@@ -31,10 +38,7 @@ export function TeamProvider({ children }: { children: any }) {
       const { team: loadedTeam, partitions: loadedPartitions } = data;
       dispatchTeam(loadedTeam);
       dispatchPartitions(loadedPartitions);
-      showNotification({
-        title: 'Load Successful',
-        message: 'Loaded your previous configuration from local browser storage.',
-      });
+      notifyLoadedInitial();
     }
   }, [/* run only once on init */]);
 

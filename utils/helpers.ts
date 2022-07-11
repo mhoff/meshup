@@ -15,6 +15,24 @@ function findLastIndex<T>(array: Array<T>, predicate: (value: T, index: number, 
   return -1;
 }
 
+function arraysEqual(a: any[], b: any[]) {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (a.length !== b.length) return false;
+
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] instanceof Array && b[i] instanceof Array) {
+      if (!arraysEqual(a[i], b[i])) {
+        return false;
+      }
+    }
+    if (a[i] !== b[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 type TypedArray =
   | Int8Array
   | Uint8Array
@@ -58,5 +76,5 @@ const outputArrayInt32: (module: Module)
 
 // eslint-disable-next-line import/prefer-default-export
 export {
-  findLastIndex, inputArrayInt32, inputArrayFloat32, outputArrayInt32,
+  findLastIndex, arraysEqual, inputArrayInt32, inputArrayFloat32, outputArrayInt32,
 };
