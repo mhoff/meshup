@@ -4,7 +4,7 @@ import {
 } from '@mantine/core';
 import { Plus, Minus, Icon } from 'tabler-icons-react';
 import * as React from 'react';
-import styles from './ConnectionGrid.module.css';
+import styles from './ConnectionGrid.module.scss';
 import { useTeamContext } from '../providers/team';
 import {
   getConnection, updateConnectedness,
@@ -33,10 +33,14 @@ export default function ConnectionGrid() {
   return (
     <div>
       {team.size > 1 ? (
-        <Table verticalSpacing={4} sx={{ '& tbody tr td': { borderBottom: 0 } }}>
+        <Table
+          className={styles.connectionGrid}
+          verticalSpacing={4}
+          sx={{ '& tbody tr td': { borderBottom: 0 }, width: 'auto' }}
+        >
           <thead>
             <tr>
-              <th className={styles.colHeader}>
+              <th>
                 <Center>
                   <Button
                     compact
@@ -51,7 +55,7 @@ export default function ConnectionGrid() {
                 </Center>
               </th>
               {team.members.map((member, index) => (
-                <th key={`col-${member.id}`} className={styles.colHeader}>
+                <th key={`col-${member.id}`}>
                   {member.name}
                 </th>
               ))}
@@ -76,6 +80,7 @@ export default function ConnectionGrid() {
                       key={`${rowMember.id}/${colMember.id}`}
                     >
                       <Button
+                        compact
                         fullWidth
                         variant="outline"
                         onClick={() => setTeam(updateConnectedness(team, rowIndex, colIndex, Modes[mode].func))}

@@ -34,7 +34,7 @@ export default function Home() {
           Please note that, as of now, only pairs of two are supported.
           Also please avoid large connection strengths (roughly bigger than 5).
         </p>
-        <Grid justify="center" align="stretch" style={{ width: '100%' }}>
+        <Grid justify="center" align="stretch" gutter={30} style={{ width: '100%' }}>
           <Grid.Col sm={12} md={2}>
             <h2>Team Members</h2>
             <MemberList />
@@ -55,8 +55,6 @@ export default function Home() {
           </Grid.Col>
         </Grid>
       </main>
-
-      <footer className={styles.footer} />
     </div>
   );
 }

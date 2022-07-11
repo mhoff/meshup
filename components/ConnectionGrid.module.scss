@@ -1,0 +1,19 @@
+.connectionGrid {
+    th {
+        max-width: 100px;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        text-align: center !important;
+        vertical-align: bottom;
+        hyphens: auto;
+    }
+    
+    tr > td:first-child {
+        min-width: 100px;
+        max-width: 140px;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        text-align: center;
+        hyphens: auto;
+    }
+}

@@ -16,7 +16,7 @@ export default function ConnectionsPage() {
         The icon in the top left indicates whether the click will produce an increment (+)
         or a decrement (-).
       </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px' }}>
         <div style={{ maxWidth: '100%' }}>
           <Title order={4}>Team Members</Title>
           <div style={{ overflow: 'auto' }}>

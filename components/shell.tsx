@@ -2,7 +2,6 @@ import {
   AppShell,
   Navbar,
   Header,
-  Footer,
   Text,
   MediaQuery,
   Burger,
@@ -162,13 +161,13 @@ export default function Shell({ children }: { children: any }) {
           </Navbar.Section>
         </Navbar>
       )}
-      footer={(
-        <MediaQuery smallerThan="sm" styles={{ display: 'none' }}>
-          <Footer height={60} p="md">
-            Groupify &mdash; create sensible group matchups
-          </Footer>
-        </MediaQuery>
-      )}
+      // footer={(
+      //   <MediaQuery smallerThan="sm" styles={{ display: 'none' }}>
+      //     <Footer height={60} p="md">
+      //       Groupify &mdash; create sensible group matchups
+      //     </Footer>
+      //   </MediaQuery>
+      // )}
       header={(
         <Header height={70} p="md">
           <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
@@ -181,7 +180,7 @@ export default function Shell({ children }: { children: any }) {
                 mr="xl"
               />
             </MediaQuery>
-            <Title order={1}>Groupify</Title>
+            <Title order={1}>Matchup</Title>
           </div>
         </Header>
       )}

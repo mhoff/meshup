@@ -124,7 +124,7 @@ export default function MemberGraph(props: MemberGraphProps) {
       {team.size > 1
         ? (
           <svg
-            width="100%"
+            width="auto"
             style={{
               aspectRatio: 'auto',
               maxHeight: '80vh', // TODO
