@@ -32,6 +32,7 @@ export default function MemberGraph(props: MemberGraphProps) {
     'black', // strength 0
     'green', // strength >0
   ];
+  const defaultNodeColor = '#CCC';
 
   // const svgRef = useRef<SVGSVGElement>(null);
 
@@ -40,6 +41,8 @@ export default function MemberGraph(props: MemberGraphProps) {
   const [animatedNodes, setAnimatedNodes] = useState<MemberNode[]>([]);
   const [animatedLinks, setAnimatedLinks] = useState<MemberLink[]>([]);
   const nodeRadius = useMemo(() => Math.max(...team.members.map((member) => member.name.length * 4), 25), [team]);
+
+  const [hoveredNodeIdx, setHoveredNodeIdx] = useState<number | null>(null);
 
   const nodes = useMemo(
     () => team.members.map((member) => {
@@ -102,22 +105,31 @@ export default function MemberGraph(props: MemberGraphProps) {
   }, [nodes, links, nodeRadius]);
 
   function getViewBox() {
-    const minX = Math.min(...animatedNodes.map((n) => n.x as number)) - nodeRadius;
-    const maxX = Math.max(...animatedNodes.map((n) => n.x as number)) + nodeRadius;
-    const minY = Math.min(...animatedNodes.map((n) => n.y as number)) - nodeRadius;
-    const maxY = Math.max(...animatedNodes.map((n) => n.y as number)) + nodeRadius;
+    const paddedNodeRadius = nodeRadius + 5;
+
+    const minX = Math.min(...animatedNodes.map((n) => n.x as number)) - paddedNodeRadius;
+    const maxX = Math.max(...animatedNodes.map((n) => n.x as number)) + paddedNodeRadius;
+    const minY = Math.min(...animatedNodes.map((n) => n.y as number)) - paddedNodeRadius;
+    const maxY = Math.max(...animatedNodes.map((n) => n.y as number)) + paddedNodeRadius;
 
     return `${minX} ${minY} ${maxX - minX} ${maxY - minY}`;
   }
 
   const nodeColors: (i: number) => string = useMemo(() => {
     if (partitioning.length === 0) {
-      return (_: number) => '#CCC';
+      return (_: number) => defaultNodeColor;
     }
+
     const nPartitions = Math.max(...partitioning);
     // https://github.com/d3/d3-scale-chromatic
-    return (i: number) => d3.interpolateWarm(partitioning[i] / nPartitions);
-  }, [partitioning]);
+    const colorPalette = d3.interpolateWarm;
+    if (hoveredNodeIdx !== null) {
+      return (i: number) => ((partitioning[i] === partitioning[hoveredNodeIdx])
+        ? colorPalette(partitioning[i] / nPartitions)
+        : defaultNodeColor);
+    }
+    return (i: number) => colorPalette(partitioning[i] / nPartitions);
+  }, [partitioning, hoveredNodeIdx]);
 
   return (
     <div>
@@ -147,7 +159,16 @@ export default function MemberGraph(props: MemberGraphProps) {
               ))}
             </g>
             {animatedNodes.map((node, i) => (
-              <g className="node" transform={`translate(${node.x}, ${node.y})`} key={node.id}>
+              <g
+                className="node"
+                transform={`translate(${node.x}, ${node.y})`}
+                key={node.id}
+                onMouseEnter={() => { setHoveredNodeIdx(i); }}
+                onMouseLeave={() => { if (hoveredNodeIdx === i) { setHoveredNodeIdx(null); } }}
+              >
+                {/* (hoveredNodeIdx !== null && partitioning !== null
+                  && partitioning[i] === partitioning[hoveredNodeIdx])
+                  && (<circle fill="red" r={node.r + 2} />) */}
                 <circle fill={nodeColors(i)} r={node.r} />
                 <text y={5} fill="black" fontSize={13} textAnchor="middle">{node.name}</text>
               </g>
