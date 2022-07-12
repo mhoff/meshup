@@ -11,8 +11,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3     
     - uses: bahmutov/npm-install@v1
-    - name: Build
-      run: npm run build
     - uses: actions/cache@v2
       with:
         path: |
@@ -23,13 +21,14 @@ jobs:
         # If source files changed but packages didn't, rebuild from a prior cache.
         restore-keys: |
           ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+    - name: Build
+      run: npm run build
     - name: Deploy
       uses: up9cloud/action-rsync@master
       env:
         HOST: w01d1f1b.kasserver.com
         USER: ssh-w01d1f1b
         KEY: ${{secrets.DEPLOY_SSH_KEY}}
-        VERBOSE: true
         ARGS: -ar --delete
         SOURCE: out/
         TARGET: /www/htdocs/w01d1f1b/meshup.mhoff.net
