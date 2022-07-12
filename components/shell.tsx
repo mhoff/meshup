@@ -172,7 +172,7 @@ export default function Shell({ children }: { children: any }) {
                 mr="xl"
               />
             </MediaQuery>
-            <Title order={1}>Matchup</Title>
+            <Title order={1}>Mesh:up</Title>
           </div>
         </Header>
       )}
