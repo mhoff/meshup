@@ -19,6 +19,7 @@ jobs:
         HOST: w01d1f1b.kasserver.com
         USER: ssh-w01008fe
         KEY: ${{secrets.SSH_PRIVATE_KEY}}
+        VERBOSE: true
         ARGS: -ar --delete
         SOURCE: out/
         TARGET: /www/htdocs/w01d1f1b/meshup.mhoff.net
