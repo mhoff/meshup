@@ -13,12 +13,22 @@ jobs:
     - uses: bahmutov/npm-install@v1
     - name: Build
       run: npm run build
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.npm
+          ${{ github.workspace }}/.next/cache
+        # Generate a new cache whenever packages or source files change.
+        key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
+        # If source files changed but packages didn't, rebuild from a prior cache.
+        restore-keys: |
+          ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
     - name: Deploy
       uses: up9cloud/action-rsync@master
       env:
         HOST: w01d1f1b.kasserver.com
-        USER: ssh-w01008fe
-        KEY: ${{secrets.SSH_PRIVATE_KEY}}
+        USER: ssh-w01d1f1b
+        KEY: ${{secrets.DEPLOY_SSH_KEY}}
         VERBOSE: true
         ARGS: -ar --delete
         SOURCE: out/
