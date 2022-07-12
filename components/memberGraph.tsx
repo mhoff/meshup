@@ -115,21 +115,24 @@ export default function MemberGraph(props: MemberGraphProps) {
     return `${minX} ${minY} ${maxX - minX} ${maxY - minY}`;
   }
 
-  const nodeColors: (i: number) => string = useMemo(() => {
+  const nodeColors: string[] = useMemo(() => {
     if (partitioning.length === 0) {
-      return (_: number) => defaultNodeColor;
+      return members.map(() => defaultNodeColor);
     }
 
     const nPartitions = Math.max(...partitioning);
-    // https://github.com/d3/d3-scale-chromatic
-    const colorPalette = d3.interpolateWarm;
-    if (hoveredNodeIdx !== null) {
-      return (i: number) => ((partitioning[i] === partitioning[hoveredNodeIdx])
-        ? colorPalette(partitioning[i] / nPartitions)
-        : defaultNodeColor);
+    if (nPartitions <= 9) {
+      return partitioning.map((p) => d3.schemeTableau10[p]);
     }
-    return (i: number) => colorPalette(partitioning[i] / nPartitions);
-  }, [partitioning, hoveredNodeIdx]);
+
+    // https://github.com/d3/d3-scale-chromatic
+    const colorPalette = d3.interpolateCubehelixDefault;
+    // if (hoveredNodeIdx !== null) {
+    //   const pHovered = partitioning[hoveredNodeIdx];
+    //   return partitioning.map((p) => (p === pHovered ? colorPalette(p / nPartitions) : defaultNodeColor));
+    // }
+    return partitioning.map((p) => colorPalette((p / nPartitions) * 0.5 + 0.25));
+  }, [partitioning, /* hoveredNodeIdx, */members]);
 
   return (
     <div>
@@ -166,10 +169,10 @@ export default function MemberGraph(props: MemberGraphProps) {
                 onMouseEnter={() => { setHoveredNodeIdx(i); }}
                 onMouseLeave={() => { if (hoveredNodeIdx === i) { setHoveredNodeIdx(null); } }}
               >
-                {/* (hoveredNodeIdx !== null && partitioning !== null
+                {(hoveredNodeIdx !== null && partitioning !== null
                   && partitioning[i] === partitioning[hoveredNodeIdx])
-                  && (<circle fill="red" r={node.r + 2} />) */}
-                <circle fill={nodeColors(i)} r={node.r} />
+                  && (<circle fill="red" r={node.r + 2} />)}
+                <circle fill={nodeColors[i]} r={node.r} />
                 <text y={5} fill="black" fontSize={13} textAnchor="middle">{node.name}</text>
               </g>
             ))}
