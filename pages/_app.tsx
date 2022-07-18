@@ -6,7 +6,7 @@ import { NotificationsProvider } from '@mantine/notifications';
 import { TeamProvider } from '../providers/team';
 import Shell from '../components/shell';
 
-function MyApp({ Component, pageProps }: AppProps) {
+function AppRoot({ Component, pageProps }: AppProps) {
   return (
     <MantineProvider
       withGlobalStyles
@@ -28,4 +28,4 @@ function MyApp({ Component, pageProps }: AppProps) {
   );
 }
 
-export default MyApp;
+export default AppRoot;
