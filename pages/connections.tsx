@@ -1,5 +1,6 @@
 import { Title } from '@mantine/core';
 import * as React from 'react';
+import Collector from '../components/collector';
 import ConnectionGrid from '../components/connectionGrid';
 import MemberGraph from '../components/memberGraph';
 
@@ -19,6 +20,7 @@ export default function ConnectionsPage() {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px' }}>
         <div style={{ maxWidth: '100%' }}>
           <Title order={4}>Team Members</Title>
+          <Collector />
           <div style={{ overflow: 'auto' }}>
             <ConnectionGrid />
           </div>

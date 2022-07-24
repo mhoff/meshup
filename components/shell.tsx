@@ -42,12 +42,12 @@ const navItems = [
   },
 ];
 
-export default function Shell({ children }: { children: any }) {
+function NavbarContent({ hidden, hide }: { hidden: boolean, hide: () => void }) {
   const theme = useMantineTheme();
+
   const {
     team, setTeam, partitions, setPartitions,
   } = useTeamContext();
-  const [opened, setOpened] = useState(false);
   const openFileRef = useRef<() => void>() as React.MutableRefObject<() => void>;
 
   const persistenceItems = [
@@ -98,6 +98,58 @@ export default function Shell({ children }: { children: any }) {
   };
 
   return (
+    <Navbar p="md" hiddenBreakpoint="sm" hidden={hidden} width={{ sm: 180, lg: 180 }}>
+      <Navbar.Section mt="md">
+        {navItems.map((item) => (
+          <Link
+            href={item.path}
+            key={item.label}
+          >
+            <a
+              href={item.path}
+              onClick={hide}
+            >
+              <UnstyledButton
+                sx={buttonStyle}
+              >
+                <Group>
+                  <ThemeIcon color={item.color} variant="light">
+                    {item.icon}
+                  </ThemeIcon>
+                  <Text size="sm">{item.label}</Text>
+                </Group>
+              </UnstyledButton>
+            </a>
+          </Link>
+        ))}
+      </Navbar.Section>
+      <Divider style={{ marginTop: '16px' }} />
+      <Navbar.Section mt="md">
+        {persistenceItems.map((item) => (
+          <UnstyledButton
+            sx={buttonStyle}
+            onClick={item.handler}
+            key={item.label}
+          >
+            <Group>
+              <ThemeIcon color={item.color} variant="light">
+                {item.icon}
+              </ThemeIcon>
+              <Text size="sm">{item.label}</Text>
+            </Group>
+          </UnstyledButton>
+        ))}
+        <Importer setTeam={setTeam} setPartitions={setPartitions} openFileRef={openFileRef} />
+      </Navbar.Section>
+    </Navbar>
+  );
+}
+
+export default function Shell({ children, nav }: { children: any, nav: boolean }) {
+  const theme = useMantineTheme();
+  const [opened, setOpened] = useState(false);
+
+  return (
     <AppShell
       styles={{
         main: {
@@ -107,62 +159,14 @@ export default function Shell({ children }: { children: any }) {
       navbarOffsetBreakpoint="sm"
       asideOffsetBreakpoint="sm"
       fixed
-      navbar={(
-        <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{ sm: 180, lg: 180 }}>
-          <Navbar.Section mt="md">
-            {navItems.map((item) => (
-              <Link
-                href={item.path}
-                key={item.label}
-              >
-                <a
-                  href={item.path}
-                  onClick={(() => setOpened(false))}
-                >
-                  <UnstyledButton
-                    sx={buttonStyle}
-                  >
-                    <Group>
-                      <ThemeIcon color={item.color} variant="light">
-                        {item.icon}
-                      </ThemeIcon>
-                      <Text size="sm">{item.label}</Text>
-                    </Group>
-                  </UnstyledButton>
-                </a>
-              </Link>
-            ))}
-          </Navbar.Section>
-          <Divider style={{ marginTop: '16px' }} />
-          <Navbar.Section mt="md">
-            {persistenceItems.map((item) => (
-              <UnstyledButton
-                sx={buttonStyle}
-                onClick={item.handler}
-                key={item.label}
-              >
-                <Group>
-                  <ThemeIcon color={item.color} variant="light">
-                    {item.icon}
-                  </ThemeIcon>
-                  <Text size="sm">{item.label}</Text>
-                </Group>
-              </UnstyledButton>
-            ))}
-            <Importer setTeam={setTeam} setPartitions={setPartitions} openFileRef={openFileRef} />
-          </Navbar.Section>
-        </Navbar>
+      navbar={!nav ? undefined : (
+        <NavbarContent hidden={!opened} hide={() => setOpened(false)} />
       )}
-      // footer={(
-      //   <MediaQuery smallerThan="sm" styles={{ display: 'none' }}>
-      //     <Footer height={60} p="md">
-      //       Groupify &mdash; create sensible group matchups
-      //     </Footer>
-      //   </MediaQuery>
-      // )}
       header={(
         <Header height={70} p="md">
           <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+            {nav
+            && (
             <MediaQuery largerThan="sm" styles={{ display: 'none' }}>
               <Burger
                 opened={opened}
@@ -172,6 +176,7 @@ export default function Shell({ children }: { children: any }) {
                 mr="xl"
               />
             </MediaQuery>
+            )}
             <Title order={1}>Mesh:up</Title>
           </div>
         </Header>

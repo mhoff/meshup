@@ -3,10 +3,36 @@ import type { AppProps } from 'next/app';
 import { MantineProvider } from '@mantine/core';
 import * as React from 'react';
 import { NotificationsProvider } from '@mantine/notifications';
+import { NextPage } from 'next';
+import { ReactElement, ReactNode } from 'react';
 import { TeamProvider } from '../providers/team';
 import Shell from '../components/shell';
+import { CollectorProvider } from '../providers/collector';
 
-function AppRoot({ Component, pageProps }: AppProps) {
+export type NextPageWithLayout = NextPage & {
+  getLayout?: (page: ReactElement) => ReactNode
+}
+
+type AppPropsWithLayout = AppProps & {
+  Component: NextPageWithLayout
+}
+
+function AppLayout(page: ReactElement) {
+  return (
+    <TeamProvider>
+      <CollectorProvider>
+        <Shell nav>
+          {page}
+        </Shell>
+      </CollectorProvider>
+    </TeamProvider>
+  );
+}
+
+function AppRoot({ Component, pageProps }: AppPropsWithLayout) {
+  // Use the layout defined at the page level, if available
+  const getLayout = Component.getLayout ?? AppLayout;
+
   return (
     <MantineProvider
       withGlobalStyles
@@ -17,12 +43,8 @@ function AppRoot({ Component, pageProps }: AppProps) {
       }}
     >
       <NotificationsProvider>
-        <TeamProvider>
-          <Shell>
-            {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-            <Component {...pageProps} />
-          </Shell>
-        </TeamProvider>
+        {/* eslint-disable-next-line react/jsx-props-no-spreading */}
+        {getLayout(<Component {...pageProps} />)}
       </NotificationsProvider>
     </MantineProvider>
   );

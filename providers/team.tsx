@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from 'react';
+import { createContext, Dispatch, SetStateAction, useContext, useMemo } from 'react';
 import * as React from 'react';
 import { EMPTY_TEAM, Member, Team } from '../models/team';
 import { loadFromStorage } from '../utils/persistence';
@@ -8,9 +8,9 @@ import { notifyLoadedInitial, notifyResetPartitions } from '../utils/notificatio
 type TeamContextType = {
     team: Team
     members: Member[]
-    setTeam: (team: Team) => void
+    setTeam: Dispatch<SetStateAction<Team>>
     partitions: number[]
-    setPartitions: (parts: number[]) => void
+    setPartitions: Dispatch<SetStateAction<number[]>>
 }
 
 const Context = createContext<TeamContextType | null>(null);
@@ -21,12 +21,19 @@ export function TeamProvider({ children }: { children: any }) {
   const teamContext = useMemo<TeamContextType>(() => ({
     team,
     members: team.members,
-    setTeam: (newTeam: Team) => {
-      if (partitions.length > 0 && !arraysEqual(team.connectedness, newTeam.connectedness)) {
-        notifyResetPartitions();
-        dispatchPartitions([]);
-      }
-      dispatchTeam(newTeam);
+    setTeam: (ssa: SetStateAction<Team>) => {
+      dispatchTeam((prevTeam: Team) => {
+        const newTeam = typeof ssa === 'function' ? ssa(prevTeam) : ssa;
+        if (!arraysEqual(prevTeam.connectedness, newTeam.connectedness)) {
+          dispatchPartitions((prevParts) => {
+            if (prevParts.length > 0) {
+              notifyResetPartitions();
+            }
+            return [];
+          });
+        }
+        return newTeam;
+      });
     },
     partitions,
     setPartitions: dispatchPartitions,
