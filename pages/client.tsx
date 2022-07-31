@@ -1,4 +1,4 @@
-import { Button, Loader, Title } from '@mantine/core';
+import { Title } from '@mantine/core';
 import { showNotification, updateNotification } from '@mantine/notifications';
 import { useRouter } from 'next/router';
 import * as React from 'react';
@@ -7,7 +7,7 @@ import MemberRatings from '../components/memberRatings';
 import MemberSelect from '../components/memberSelect';
 import Shell from '../components/shell';
 import { Member } from '../models/collector';
-import { CollectorStateClient, NetworkState } from '../utils/collector';
+import { NetworkState } from '../utils/collector';
 import { useCollectorClient } from './_collector.hook';
 
 export default function CollectorClient() {

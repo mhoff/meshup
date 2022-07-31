@@ -7,7 +7,6 @@ import { NextPage } from 'next';
 import { ReactElement, ReactNode } from 'react';
 import { TeamProvider } from '../providers/team';
 import Shell from '../components/shell';
-import { CollectorProvider } from '../providers/collector';
 
 export type NextPageWithLayout = NextPage & {
   getLayout?: (page: ReactElement) => ReactNode
@@ -20,11 +19,9 @@ type AppPropsWithLayout = AppProps & {
 function AppLayout(page: ReactElement) {
   return (
     <TeamProvider>
-      <CollectorProvider>
-        <Shell nav>
-          {page}
-        </Shell>
-      </CollectorProvider>
+      <Shell nav>
+        {page}
+      </Shell>
     </TeamProvider>
   );
 }

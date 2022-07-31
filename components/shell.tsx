@@ -15,13 +15,12 @@ import {
 import * as React from 'react';
 import { useRef, useState } from 'react';
 import {
-  UserPlus, Affiliate, Stack2, GridDots, DeviceFloppy, Download, Upload, LayoutDashboard, Trash,
+  UserPlus, Affiliate, Stack2, GridDots, DeviceFloppy, Download, Upload, LayoutDashboard, Trash, Share,
 } from 'tabler-icons-react';
 import Link from 'next/link';
 import Importer from './persistence';
 import { deleteStorage, exportJSON, saveToStorage } from '../utils/persistence';
 import { useTeamContext } from '../providers/team';
-import { EMPTY_TEAM } from '../models/team';
 import { notifyLoad, notifyDelete } from '../utils/notifications';
 
 const navItems = [
@@ -30,6 +29,9 @@ const navItems = [
   },
   {
     icon: <UserPlus size={16} />, color: 'blue', label: 'Members', path: '/members',
+  },
+  {
+    icon: <Share size={16} />, color: 'blue', label: 'Live Poll', path: '/poll',
   },
   {
     icon: <GridDots size={16} />, color: 'blue', label: 'Connections', path: '/connections',
@@ -46,7 +48,7 @@ function NavbarContent({ hidden, hide }: { hidden: boolean, hide: () => void }) 
   const theme = useMantineTheme();
 
   const {
-    team, setTeam, partitions, setPartitions,
+    members, setMembers, partitions, setPartitions, getDiagonalMatrix, setDiagonalMatrix,
   } = useTeamContext();
   const openFileRef = useRef<() => void>() as React.MutableRefObject<() => void>;
 
@@ -55,7 +57,7 @@ function NavbarContent({ hidden, hide }: { hidden: boolean, hide: () => void }) 
       icon: <Download size={16} />,
       color: 'blue',
       label: 'Export',
-      handler: () => exportJSON('default', { team, partitions }),
+      handler: () => exportJSON('default', { team: { members, connectedness: getDiagonalMatrix() }, partitions }),
     },
     {
       icon: <Upload size={16} />,
@@ -68,7 +70,7 @@ function NavbarContent({ hidden, hide }: { hidden: boolean, hide: () => void }) 
       color: 'blue',
       label: 'Save',
       handler: () => {
-        saveToStorage('default', { team, partitions });
+        saveToStorage('default', { team: { members, connectedness: getDiagonalMatrix() }, partitions });
         notifyLoad();
       },
     },
@@ -79,7 +81,7 @@ function NavbarContent({ hidden, hide }: { hidden: boolean, hide: () => void }) 
       handler: () => {
         deleteStorage('default');
         setPartitions([]);
-        setTeam(EMPTY_TEAM);
+        setMembers([]);
         notifyDelete();
       },
     },
@@ -139,7 +141,12 @@ function NavbarContent({ hidden, hide }: { hidden: boolean, hide: () => void }) 
             </Group>
           </UnstyledButton>
         ))}
-        <Importer setTeam={setTeam} setPartitions={setPartitions} openFileRef={openFileRef} />
+        <Importer
+          setMembers={setMembers}
+          setDiagonalMatrix={setDiagonalMatrix}
+          setPartitions={setPartitions}
+          openFileRef={openFileRef}
+        />
       </Navbar.Section>
     </Navbar>
   );

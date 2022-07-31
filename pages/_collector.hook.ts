@@ -1,26 +1,39 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import {
+  useEffect, useRef, useCallback, useState,
+} from 'react';
 import { Member, WeightUpdate } from '../models/collector';
 import {
   CollectorServer, CollectorClient, CollectorStateClient, CollectorStateServer,
 } from '../utils/collector';
 
 export function useCollectorServer(
-  handleState: (_: CollectorStateServer) => void,
+  members: Member[],
   handleUpdates: (_: WeightUpdate[]) => void,
 ) {
   const workerRef: any = useRef();
-  // const [weightUpdates, setWeightUpdates] = useState<WeightUpdate[]>([]);
+  const [collectorState, setCollectorState] = useState<CollectorStateServer>();
 
-  useEffect(() => () => {
-    // cleanup
-    workerRef.current?.destroy(); // TODO implement
+  useEffect(() => {
+    if (workerRef.current !== undefined) {
+      workerRef.current.setCallback(handleUpdates);
+      workerRef.current.setMembers(members);
+    }
+    return () => {
+      // cleanup
+      workerRef.current?.destroy(); // TODO implement
+    };
+  }, [members, handleUpdates]);
+
+  const runCollector = useCallback(() => {
+    workerRef.current = new CollectorServer(members, handleUpdates, setCollectorState);
+  }, [members, handleUpdates]);
+
+  const stopCollector = useCallback(() => {
+    workerRef.current?.destroy();
+    workerRef.current = undefined;
   }, []);
 
-  const runCollector = useCallback((members: Member[]) => {
-    workerRef.current = new CollectorServer(members, handleUpdates, handleState);
-  }, []);
-
-  return runCollector;
+  return { collectorState, runCollector, stopCollector };
 }
 
 export function useCollectorClient() {

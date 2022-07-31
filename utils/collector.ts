@@ -6,6 +6,7 @@ import {
 } from '../models/collector';
 
 export enum NetworkState {
+  // eslint-disable-next-line no-unused-vars
   OFFLINE, OPEN, CONNECTED, ERROR
 }
 
@@ -58,6 +59,7 @@ abstract class CollectorBase<T extends CollectorStateBase> {
     conn.on('open', this.connOnOpen.bind(this, conn));
     conn.on('data', this.connOnData.bind(this, conn));
     conn.on('error', this.connOnError.bind(this, conn));
+    conn.on('close', this.connOnClose.bind(this, conn));
   }
 
   protected peerOnOpen(peerId: string): void {
@@ -94,6 +96,14 @@ abstract class CollectorBase<T extends CollectorStateBase> {
     });
   }
 
+  protected connOnClose(conn: any): void {
+    this.conns.splice(this.conns.indexOf(conn), 1);
+    this.updateState({
+      networkState: this.conns.length > 0 ? NetworkState.CONNECTED : NetworkState.OPEN,
+      connections: this.conns.length,
+    });
+  }
+
   protected connOnError(conn: any): void {
     // TODO what if only one connection of many fails?
     this.updateState({
@@ -120,7 +130,9 @@ abstract class CollectorBase<T extends CollectorStateBase> {
     for (let i = 0; i < this.conns.length; i++) {
       this.conns[i].close();
     }
-    this.peer.destroy();
+    if (this.peer !== undefined) {
+      this.peer.destroy();
+    }
   }
 }
 
@@ -162,6 +174,17 @@ export class CollectorServer extends CollectorBase<CollectorStateServer> {
       sourceId: token,
       ...base,
     })));
+  }
+
+  public setCallback(callback: (updates: WeightUpdate[]) => void) {
+    this.callback = callback;
+  }
+
+  public setMembers(members: Member[]) {
+    this.members = members;
+    for (let i = 0; i < this.conns.length; i++) {
+      this.conns[i].send(JSON.stringify(this.members));
+    }
   }
 }
 

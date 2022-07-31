@@ -1,4 +1,8 @@
+import * as R from 'ramda';
+import { useCallback, useMemo } from 'react';
+import { useStateWithDeps } from 'use-state-with-deps';
 import { v4 as genID } from 'uuid';
+import { usePrevious } from '../utils/helpers';
 
 export type Connectedness = Array<Array<number>>
 
@@ -20,6 +24,13 @@ export const EMPTY_TEAM: Team = {
 
 function sorted(...args: number[]): number[] {
   return [...args].sort((a, b) => a - b);
+}
+
+export function newMember(name: string): Member {
+  return {
+    name,
+    id: genID(),
+  };
 }
 
 export function prependTeam(team: Team, newMemberName: string): Team {
@@ -129,4 +140,181 @@ export function getConnection(team: Team, _c1: number, _c2: number) {
   const [c1, c2] = sorted(_c1, _c2);
   const [row, col] = [team.size - 1 - c2, c1];
   return team.connectedness[row][col];
+}
+
+type Matrix = number[][]
+
+export function useMemberConnection(members: Member[], defaultWeight: number = 0) {
+  const memberIds = useMemo(() => members.map((m) => m.id), [members]);
+  const prevMemberIds = usePrevious(memberIds);
+
+  const [matrix, setMatrix] = useStateWithDeps<Matrix>(
+    (prevMatrix: Matrix | undefined) => {
+      const newMatrix = new Array(memberIds.length).fill(0).map(
+        (m1) => new Array(memberIds.length).fill(0).map(
+          (m2) => {
+            const prevRowIdx = prevMemberIds?.indexOf(m1) || -1;
+            const prevColIdx = prevMemberIds?.indexOf(m2) || -1;
+            return prevMatrix !== undefined && prevRowIdx !== -1 && prevColIdx !== -1
+              ? prevMatrix[prevRowIdx][prevColIdx]
+              : defaultWeight;
+          },
+        ),
+      );
+      return newMatrix;
+    },
+    [memberIds],
+  );
+
+  const getWeight = useCallback(
+    (srcIdx: number, trgIdx: number) => matrix[srcIdx][trgIdx],
+    [matrix],
+  );
+
+  const getWeightById = useCallback(
+    (srcId: string, trgId: string) => matrix[memberIds.indexOf(srcId)][memberIds.indexOf(trgId)],
+    [matrix, memberIds],
+  );
+
+  const setWeight = useCallback(
+    (srcIdx: number, trgIdx: number, update: ((prevWeight: number) => number)) => {
+      setMatrix((prevMatrix: Matrix) => {
+        const newMatrix = R.clone(prevMatrix);
+        newMatrix[srcIdx][trgIdx] = update(prevMatrix[srcIdx][trgIdx]);
+        return newMatrix;
+      });
+    },
+    [setMatrix],
+  );
+
+  const setWeightById = useCallback(
+    (srcId: string, trgId: string, update: (
+      (prevWeight: number) => number)) => setWeight(memberIds.indexOf(srcId), memberIds.indexOf(trgId), update),
+    [memberIds, setWeight],
+  );
+
+  const getWeights: () => { srcIdx: number, trgIdx: number, forward: number, backward: number }[] = useCallback(
+    () => matrix.flatMap(
+      (row, rowIdx: number) => (row.slice(0, rowIdx).map((forward: number, colIdx: number) => ({
+        srcIdx: rowIdx,
+        trgIdx: colIdx,
+        forward,
+        backward: matrix[colIdx][rowIdx],
+      }))),
+    ),
+    [matrix],
+  );
+
+  return {
+    getWeight, getWeightById, getWeights, setWeight, setWeightById,
+  };
+}
+
+function toDiagonalIdxs(total: number, srcIdx: number, trgIdx: number) {
+  const [c1, c2] = sorted(srcIdx, trgIdx);
+  const [row, col] = [total - 1 - c2, c1];
+  return [row, col];
+}
+
+const getDiagonalWeight = (matrix: Matrix, srcIdx: number, trgIdx: number) => {
+  const [row, col] = toDiagonalIdxs(matrix.length, srcIdx, trgIdx);
+  return matrix[row][col];
+};
+
+const getDiagonalWeightById = (
+  matrix: Matrix,
+  ids: string[],
+  srcId: string,
+  trgId: string,
+) => getDiagonalWeight(matrix, ids.indexOf(srcId), ids.indexOf(trgId));
+
+export function useMemberUnidirectionalConnection(members: Member[], defaultWeight: number = 0) {
+  const memberIds = useMemo(() => members.map((m) => m.id), [members]);
+  const prevMemberIds = usePrevious(memberIds);
+
+  const [matrix, setMatrix] = useStateWithDeps<Matrix>(
+    (prevMatrix: Matrix | undefined) => {
+      const newMatrix = new Array(memberIds.length).fill(0).map(
+        (m1, rowIdx) => new Array(memberIds.length - 1 - rowIdx).fill(0).map(
+          (m2) => {
+            if (prevMatrix !== undefined && prevMemberIds !== undefined
+                && [m1, m2].every(prevMemberIds.includes.bind(prevMemberIds))) {
+              return getDiagonalWeightById(prevMatrix, prevMemberIds, m1, m2);
+            }
+            return defaultWeight;
+          },
+        ),
+      );
+      return newMatrix;
+    },
+    [memberIds],
+  );
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const getWeight = useCallback(
+    getDiagonalWeight.bind(null, matrix),
+    [matrix],
+  );
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const getWeightById = useCallback(
+    getDiagonalWeightById.bind(null, matrix, memberIds),
+    [matrix, memberIds],
+  );
+
+  const setWeight = useCallback(
+    (srcIdx: number, trgIdx: number, update: ((prevWeight: number) => number)) => {
+      setMatrix((prevMatrix: Matrix) => {
+        const newMatrix = R.clone(prevMatrix);
+        const [row, col] = toDiagonalIdxs(prevMatrix.length, srcIdx, trgIdx);
+        newMatrix[row][col] = update(prevMatrix[row][col]);
+        return newMatrix;
+      });
+    },
+    [setMatrix],
+  );
+
+  const setWeightById = useCallback(
+    (srcId: string, trgId: string, update: (
+      (prevWeight: number) => number)) => {
+      setMatrix((prevMatrix: Matrix) => {
+        const newMatrix = R.clone(prevMatrix);
+        const [row, col] = toDiagonalIdxs(prevMatrix.length, memberIds.indexOf(srcId), memberIds.indexOf(trgId));
+        newMatrix[row][col] = update(prevMatrix[row][col]);
+        return newMatrix;
+      });
+    },
+    [memberIds, setMatrix],
+  );
+
+  const getWeights: () => { srcIdx: number, trgIdx: number, forward: number }[] = useCallback(
+    () => matrix.flatMap(
+      (row, rowIdx: number) => (row.map((forward: number, colIdx: number) => ({
+        srcIdx: matrix.length - 1 - rowIdx,
+        trgIdx: colIdx,
+        forward,
+      }))),
+    ),
+    [matrix],
+  );
+
+  const getMatrix: () => number[][] = useCallback(
+    () => matrix.map((row, rx) => row.concat(NaN, ...matrix.slice(0, rx)
+      .map((r) => r[matrix.length - 1 - rx]).reverse())).reverse(),
+    [matrix],
+  );
+
+  const setDiagonalMatrix: (data: number[][]) => void = useCallback(
+    (data: number[][]) => setMatrix(data),
+    [setMatrix],
+  );
+
+  const getDiagonalMatrix: () => number[][] = useCallback(
+    () => matrix,
+    [matrix],
+  );
+
+  return {
+    getWeight, getWeightById, getWeights, setWeight, setWeightById, getMatrix, getDiagonalMatrix, setDiagonalMatrix,
+  };
 }
