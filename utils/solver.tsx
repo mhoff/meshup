@@ -33,13 +33,10 @@ function partitionScore(parts: Int32Array, conns: number[][]): number {
 }
 
 export default async function partition(conn: Connectedness, nPartitions: number): Promise<number[]> {
-  const negWeight = Math.min(0, Math.min(...conn.map((row) => Math.min(...row))));
-  const maxWeight = Math.max(...conn.map((row) => Math.max(...row))) - negWeight;
+  const negWeight = Math.min(0, Math.min(...conn.map((row) => Math.min(...row.filter(Number.isFinite)))));
+  const maxWeight = Math.max(...conn.map((row) => Math.max(...row.filter(Number.isFinite)))) - negWeight;
 
-  const connRows = conn.map((row, rx) => row.concat(NaN, ...conn.slice(0, rx)
-    .map((r) => r[conn.length - 1 - rx]).reverse())).reverse();
-
-  const edgeMap = connRows.map((row, src) => ({
+  const edgeMap = conn.map((row, src) => ({
     src,
     edges: row.map((w, trg) => ({
       trg,
@@ -55,11 +52,6 @@ export default async function partition(conn: Connectedness, nPartitions: number
   const nNodes = conn.length;
   const nEdges = nNodes * nNodes;
   const imbalance = 0.00;
-
-  console.log(edgeMap.map(({ edges }) => edges.length)
-    .reduce<number[]>((acc, v) => (acc.length === 0 ? [0, v] : acc.concat([acc[acc.length - 1] + v])), []));
-  console.log(edgeMap.flatMap(({ edges }) => edges.map(({ trg }) => trg)));
-  console.log(edgeMap.flatMap(({ edges }) => edges.map(({ w }) => w)));
 
   const [, nodePtr] = inputIntArrPtr([nNodes]);
   const [, xadjPtr] = inputIntArrPtr(edgeMap.map(({ edges }) => edges.length)
@@ -100,7 +92,7 @@ export default async function partition(conn: Connectedness, nPartitions: number
     // const edgecutArray = new Int32Array(Module.HEAP32.buffer, edgecutPtr, nEdges);
     const partsArray = new Int32Array(Module.HEAP32.buffer, partsPtr, nNodes);
 
-    const score = partitionScore(partsArray, connRows);
+    const score = partitionScore(partsArray, conn);
 
     console.log(`Found score ${score}`);
 

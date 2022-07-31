@@ -6,8 +6,13 @@ import MemberList from '../components/members';
 import ConnectionGrid from '../components/connectionGrid';
 import Pairing from '../components/pairing';
 import MemberGraph from '../components/memberGraph';
+import { useTeamContext } from '../providers/team';
 
 export default function Home() {
+  const {
+    members, setMembers, partitions, setPartitions, getMatrix, getWeights, getWeight, setWeight,
+  } = useTeamContext();
+
   return (
     <div className={styles.container}>
       <Head>
@@ -46,21 +51,21 @@ export default function Home() {
         <Grid justify="center" align="stretch" gutter={30} style={{ width: '100%' }}>
           <Grid.Col sm={12} md={2}>
             <h2>Team Members</h2>
-            <MemberList />
+            <MemberList members={members} setMembers={setMembers} />
           </Grid.Col>
           <Grid.Col sm={12} md={10}>
             <h2>Team Connectedness</h2>
             <div style={{ overflow: 'auto' }}>
-              <ConnectionGrid />
+              <ConnectionGrid members={members} getWeight={getWeight} setWeight={setWeight} />
             </div>
           </Grid.Col>
           <Grid.Col sm={12} md={2}>
             <h2>Pairing Generator</h2>
-            <Pairing />
+            <Pairing getMatrix={getMatrix} members={members} partitions={partitions} setPartitions={setPartitions} />
           </Grid.Col>
           <Grid.Col sm={12} md={10}>
             <h2>Team Graph</h2>
-            <MemberGraph />
+            <MemberGraph getWeights={getWeights} members={members} partitions={partitions} />
           </Grid.Col>
         </Grid>
       </main>

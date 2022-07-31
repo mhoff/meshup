@@ -6,15 +6,19 @@ import {
 } from '@mantine/core';
 import { FormEvent, useCallback, useState } from 'react';
 import * as React from 'react';
-import { useTeamContext } from '../providers/team';
-// import usePartitioner from '../pages/_app.hooks';
-// import { PartitioningRequest, PartitioningResponse } from '../interfaces/generator';
 import partition from '../utils/solver';
+import { Member } from '../models/collector';
 
-export default function Pairing() {
-  const {
-    team, members, partitions, setPartitions,
-  } = useTeamContext();
+interface PairingProps {
+  members: Member[],
+  partitions: number[],
+  setPartitions: (partitions: number[]) => void,
+  getMatrix: () => number[][],
+}
+
+export default function Pairing({
+  members, partitions, setPartitions, getMatrix,
+}: PairingProps) {
   const [groupSize, setGroupSize] = useState(2);
   const [alternateGroupSizes, setAlternateGroupSizes] = useState<[number, number]>([0, 1]);
   const [loading, setLoading] = useState<Boolean>(false);
@@ -34,7 +38,7 @@ export default function Pairing() {
     // };
     setLoading(true);
     // setPartitioningRequest(req);
-    setPartitions(await partition(team.connectedness, Math.round(team.size / groupSize)));
+    setPartitions(await partition(getMatrix(), Math.round(members.length / groupSize)));
     setLoading(false);
   };
 
@@ -42,39 +46,39 @@ export default function Pairing() {
     let [lower, upper] = value;
     [lower, upper] = [
       Math.max(Math.min(lower, groupSize), 1),
-      Math.min(Math.max(upper, groupSize), team.size - 1),
+      Math.min(Math.max(upper, groupSize), members.length - 1),
     ];
     upper = lower === upper ? upper + 1 : upper;
     setAlternateGroupSizes([
       lower, upper,
     ]);
-  }, [groupSize]);
+  }, [groupSize, members]);
 
   React.useEffect(() => {
     handleAlternateGroupSizesInput([groupSize, groupSize + 1]);
-  }, [team, groupSize, handleAlternateGroupSizesInput]);
+  }, [groupSize, handleAlternateGroupSizesInput]);
 
   return (
     <div>
-      {team.size > 1 ? (
+      {members.length > 1 ? (
         <Box sx={{ maxWidth: 300 }} mx="0">
           <form onSubmit={handleGeneratorSubmit}>
             <NumberInput
               label="Size of pairings"
               defaultValue={2}
               min={2}
-              max={team.size}
+              max={members.length}
               onChange={(value) => value !== undefined && setGroupSize(value)}
             />
             <InputWrapper label="Alternate group sizes">
               <RangeSlider
                 label={null}
-                disabled={team.size % groupSize === 0}
+                disabled={members.length % groupSize === 0}
                 min={1}
-                max={team.size - 1}
+                max={members.length - 1}
                 step={1}
                 minRange={1}
-                marks={new Array(team.size - 1).fill(0).map((_, i) => ({ value: i + 1, label: i + 1 }))}
+                marks={new Array(members.length - 1).fill(0).map((_, i) => ({ value: i + 1, label: i + 1 }))}
                 value={alternateGroupSizes}
                 onChange={([lower, upper]) => handleAlternateGroupSizesInput([
                   Number.isNaN(lower) ? alternateGroupSizes[0] : lower,

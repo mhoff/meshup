@@ -1,9 +1,17 @@
 import { Title } from '@mantine/core';
 import * as React from 'react';
+import { useDeferredValue } from 'react';
 import ConnectionGrid from '../components/connectionGrid';
 import MemberGraph from '../components/memberGraph';
+import { useTeamContext } from '../providers/team';
 
 export default function ConnectionsPage() {
+  const {
+    members, partitions, getWeight, getWeights, setWeight,
+  } = useTeamContext();
+
+  const deferred = useDeferredValue({ members, getWeights });
+
   return (
     <div>
       <Title order={2}>Team Connections</Title>
@@ -20,12 +28,12 @@ export default function ConnectionsPage() {
         <div style={{ maxWidth: '100%' }}>
           <Title order={4}>Team Members</Title>
           <div style={{ overflow: 'auto' }}>
-            <ConnectionGrid />
+            <ConnectionGrid members={members} getWeight={getWeight} setWeight={setWeight} />
           </div>
         </div>
         <div style={{ flexGrow: 1 }}>
           <Title order={4}>Visualization</Title>
-          <MemberGraph />
+          <MemberGraph getWeights={deferred.getWeights} members={deferred.members} partitions={partitions} />
         </div>
       </div>
     </div>

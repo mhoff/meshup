@@ -15,13 +15,12 @@ import {
 import * as React from 'react';
 import { useRef, useState } from 'react';
 import {
-  UserPlus, Affiliate, Stack2, GridDots, DeviceFloppy, Download, Upload, LayoutDashboard, Trash,
+  UserPlus, Affiliate, Stack2, GridDots, DeviceFloppy, Download, Upload, LayoutDashboard, Trash, Share,
 } from 'tabler-icons-react';
 import Link from 'next/link';
 import Importer from './persistence';
 import { deleteStorage, exportJSON, saveToStorage } from '../utils/persistence';
 import { useTeamContext } from '../providers/team';
-import { EMPTY_TEAM } from '../models/team';
 import { notifyLoad, notifyDelete } from '../utils/notifications';
 
 const navItems = [
@@ -30,6 +29,9 @@ const navItems = [
   },
   {
     icon: <UserPlus size={16} />, color: 'blue', label: 'Members', path: '/members',
+  },
+  {
+    icon: <Share size={16} />, color: 'blue', label: 'Live Poll', path: '/poll',
   },
   {
     icon: <GridDots size={16} />, color: 'blue', label: 'Connections', path: '/connections',
@@ -42,12 +44,12 @@ const navItems = [
   },
 ];
 
-export default function Shell({ children }: { children: any }) {
+function NavbarContent({ hidden, hide }: { hidden: boolean, hide: () => void }) {
   const theme = useMantineTheme();
+
   const {
-    team, setTeam, partitions, setPartitions,
+    members, setMembers, partitions, setPartitions, getDiagonalMatrix, setDiagonalMatrix,
   } = useTeamContext();
-  const [opened, setOpened] = useState(false);
   const openFileRef = useRef<() => void>() as React.MutableRefObject<() => void>;
 
   const persistenceItems = [
@@ -55,7 +57,7 @@ export default function Shell({ children }: { children: any }) {
       icon: <Download size={16} />,
       color: 'blue',
       label: 'Export',
-      handler: () => exportJSON('default', { team, partitions }),
+      handler: () => exportJSON('default', { team: { members, connectedness: getDiagonalMatrix() }, partitions }),
     },
     {
       icon: <Upload size={16} />,
@@ -68,7 +70,7 @@ export default function Shell({ children }: { children: any }) {
       color: 'blue',
       label: 'Save',
       handler: () => {
-        saveToStorage('default', { team, partitions });
+        saveToStorage('default', { team: { members, connectedness: getDiagonalMatrix() }, partitions });
         notifyLoad();
       },
     },
@@ -79,7 +81,7 @@ export default function Shell({ children }: { children: any }) {
       handler: () => {
         deleteStorage('default');
         setPartitions([]);
-        setTeam(EMPTY_TEAM);
+        setMembers([]);
         notifyDelete();
       },
     },
@@ -98,6 +100,63 @@ export default function Shell({ children }: { children: any }) {
   };
 
   return (
+    <Navbar p="md" hiddenBreakpoint="sm" hidden={hidden} width={{ sm: 180, lg: 180 }}>
+      <Navbar.Section mt="md">
+        {navItems.map((item) => (
+          <Link
+            href={item.path}
+            key={item.label}
+          >
+            <a
+              href={item.path}
+              onClick={hide}
+            >
+              <UnstyledButton
+                sx={buttonStyle}
+              >
+                <Group>
+                  <ThemeIcon color={item.color} variant="light">
+                    {item.icon}
+                  </ThemeIcon>
+                  <Text size="sm">{item.label}</Text>
+                </Group>
+              </UnstyledButton>
+            </a>
+          </Link>
+        ))}
+      </Navbar.Section>
+      <Divider style={{ marginTop: '16px' }} />
+      <Navbar.Section mt="md">
+        {persistenceItems.map((item) => (
+          <UnstyledButton
+            sx={buttonStyle}
+            onClick={item.handler}
+            key={item.label}
+          >
+            <Group>
+              <ThemeIcon color={item.color} variant="light">
+                {item.icon}
+              </ThemeIcon>
+              <Text size="sm">{item.label}</Text>
+            </Group>
+          </UnstyledButton>
+        ))}
+        <Importer
+          setMembers={setMembers}
+          setDiagonalMatrix={setDiagonalMatrix}
+          setPartitions={setPartitions}
+          openFileRef={openFileRef}
+        />
+      </Navbar.Section>
+    </Navbar>
+  );
+}
+
+export default function Shell({ children, nav }: { children: any, nav: boolean }) {
+  const theme = useMantineTheme();
+  const [opened, setOpened] = useState(false);
+
+  return (
     <AppShell
       styles={{
         main: {
@@ -107,62 +166,14 @@ export default function Shell({ children }: { children: any }) {
       navbarOffsetBreakpoint="sm"
       asideOffsetBreakpoint="sm"
       fixed
-      navbar={(
-        <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{ sm: 180, lg: 180 }}>
-          <Navbar.Section mt="md">
-            {navItems.map((item) => (
-              <Link
-                href={item.path}
-                key={item.label}
-              >
-                <a
-                  href={item.path}
-                  onClick={(() => setOpened(false))}
-                >
-                  <UnstyledButton
-                    sx={buttonStyle}
-                  >
-                    <Group>
-                      <ThemeIcon color={item.color} variant="light">
-                        {item.icon}
-                      </ThemeIcon>
-                      <Text size="sm">{item.label}</Text>
-                    </Group>
-                  </UnstyledButton>
-                </a>
-              </Link>
-            ))}
-          </Navbar.Section>
-          <Divider style={{ marginTop: '16px' }} />
-          <Navbar.Section mt="md">
-            {persistenceItems.map((item) => (
-              <UnstyledButton
-                sx={buttonStyle}
-                onClick={item.handler}
-                key={item.label}
-              >
-                <Group>
-                  <ThemeIcon color={item.color} variant="light">
-                    {item.icon}
-                  </ThemeIcon>
-                  <Text size="sm">{item.label}</Text>
-                </Group>
-              </UnstyledButton>
-            ))}
-            <Importer setTeam={setTeam} setPartitions={setPartitions} openFileRef={openFileRef} />
-          </Navbar.Section>
-        </Navbar>
+      navbar={!nav ? undefined : (
+        <NavbarContent hidden={!opened} hide={() => setOpened(false)} />
       )}
-      // footer={(
-      //   <MediaQuery smallerThan="sm" styles={{ display: 'none' }}>
-      //     <Footer height={60} p="md">
-      //       Groupify &mdash; create sensible group matchups
-      //     </Footer>
-      //   </MediaQuery>
-      // )}
       header={(
         <Header height={70} p="md">
           <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+            {nav
+            && (
             <MediaQuery largerThan="sm" styles={{ display: 'none' }}>
               <Burger
                 opened={opened}
@@ -172,6 +183,7 @@ export default function Shell({ children }: { children: any }) {
                 mr="xl"
               />
             </MediaQuery>
+            )}
             <Title order={1}>Mesh:up</Title>
           </div>
         </Header>

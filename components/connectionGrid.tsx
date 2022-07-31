@@ -5,9 +5,8 @@ import {
 import { Plus, Minus, Icon } from 'tabler-icons-react';
 import * as React from 'react';
 import styles from './ConnectionGrid.module.scss';
-import { useTeamContext } from '../providers/team';
 import {
-  getConnection, updateConnectedness,
+  Member,
 } from '../models/team';
 
 interface InteractionMode {
@@ -23,16 +22,21 @@ const Modes: InteractionMode[] = [{
 }, {
   icon: Minus,
   color: 'red',
-  func: (v) => v - 1,
+  func: (v) => Math.max(0, v - 1),
 }];
 
-export default function ConnectionGrid() {
-  const { team, setTeam } = useTeamContext();
+interface ConnectionGridProps {
+  members: Member[],
+  getWeight: (srcIdx: number, trgIdx: number) => number,
+  setWeight?: (srcIdx: number, trgIdx: number, update: ((prevWeight: number) => number)) => void
+}
+
+export default function ConnectionGrid({ members, getWeight, setWeight }: ConnectionGridProps) {
   const [mode, setMode] = useState<number>(0);
 
   return (
     <div>
-      {team.size > 1 ? (
+      {members.length > 1 ? (
         <Table
           className={styles.connectionGrid}
           verticalSpacing={4}
@@ -41,6 +45,8 @@ export default function ConnectionGrid() {
           <thead>
             <tr>
               <th>
+                {setWeight !== undefined
+                && (
                 <Center>
                   <Button
                     compact
@@ -53,8 +59,9 @@ export default function ConnectionGrid() {
                     })()}
                   </Button>
                 </Center>
+                )}
               </th>
-              {team.members.map((member, index) => (
+              {members.map((member, index) => (
                 <th key={`col-${member.id}`}>
                   {member.name}
                 </th>
@@ -62,14 +69,14 @@ export default function ConnectionGrid() {
             </tr>
           </thead>
           <tbody>
-            {team.members.map((rowMember, rowIndex) => (
+            {members.map((rowMember, rowIndex) => (
               <tr key={`row-${rowMember.id}`}>
                 <td className={styles.rowHeader}>
                   <Center>
                     {rowMember.name}
                   </Center>
                 </td>
-                {team.members.map((colMember, colIndex) => {
+                {members.map((colMember, colIndex) => {
                   if (rowIndex === colIndex) {
                     return <td key={`${rowMember.id}/${colMember.id}`} />;
                   }
@@ -83,9 +90,11 @@ export default function ConnectionGrid() {
                         compact
                         fullWidth
                         variant="outline"
-                        onClick={() => setTeam(updateConnectedness(team, rowIndex, colIndex, Modes[mode].func))}
+                        onClick={setWeight !== undefined
+                          ? () => setWeight(rowIndex, colIndex, Modes[mode].func)
+                          : undefined}
                       >
-                        {getConnection(team, rowIndex, colIndex)}
+                        {getWeight(rowIndex, colIndex)}
                       </Button>
                     </td>
                   );
@@ -98,3 +107,7 @@ export default function ConnectionGrid() {
     </div>
   );
 }
+
+ConnectionGrid.defaultProps = {
+  setWeight: undefined,
+};

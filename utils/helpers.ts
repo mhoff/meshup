@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 /**
 * Returns the index of the last element in the array where predicate is true, and -1
 * otherwise.
@@ -74,7 +76,17 @@ const inputArrayFloat32: (module: Module)
 const outputArrayInt32: (module: Module)
   => ((len: number) => [Int32Array, number]) = outputArrayPtr(() => new Int32Array());
 
+function usePrevious<T>(value: T) {
+  const ref = useRef<T>();
+
+  useEffect(() => {
+    ref.current = value;
+  }, [value]);
+
+  return ref.current;
+}
+
 // eslint-disable-next-line import/prefer-default-export
 export {
-  findLastIndex, arraysEqual, inputArrayInt32, inputArrayFloat32, outputArrayInt32,
+  findLastIndex, arraysEqual, inputArrayInt32, inputArrayFloat32, outputArrayInt32, usePrevious,
 };

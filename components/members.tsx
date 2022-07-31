@@ -1,4 +1,6 @@
-import { FormEvent, useState } from 'react';
+import {
+  Dispatch, FormEvent, SetStateAction, useState,
+} from 'react';
 import {
   Table, Space, ActionIcon, TextInput, UnstyledButton, Group, Textarea,
 } from '@mantine/core';
@@ -6,13 +8,17 @@ import {
   CornerDownLeft, Trash, ArrowUp, ArrowDown, FileText,
 } from 'tabler-icons-react';
 import * as React from 'react';
-import { useTeamContext } from '../providers/team';
+import * as R from 'ramda';
 import {
-  growTeam, shrinkTeam, swapMembers, Team,
+  Member, newMember,
 } from '../models/team';
 
-export default function MemberList() {
-  const { team, setTeam } = useTeamContext();
+interface MemberListProps {
+  members: Member[],
+  setMembers: Dispatch<SetStateAction<Member[]>>
+}
+
+export default function MemberList({ members, setMembers }: MemberListProps) {
   const [input, setInput] = useState('');
   const [error, setError] = useState('');
 
@@ -21,7 +27,7 @@ export default function MemberList() {
   const handleNewMemberSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!error && input.length > 0) {
-      setTeam(input.split('\n').filter((name) => name.length > 0).reduce<Team>(growTeam, team));
+      setMembers([...members, ...input.split('\n').filter((name) => name.length > 0).map(newMember)]);
       setInput('');
     }
   };
@@ -32,7 +38,7 @@ export default function MemberList() {
     setInput(target.value);
     if (!value.match('^(.*\\S+.*\n)*(.*\\S+.*)$')) {
       setError('Please enter a valid name');
-    } else if (target.value.length > 0 && team.members.some((member) => member.name === value)) {
+    } else if (target.value.length > 0 && members.some((member) => member.name === value)) {
       setError('This member already exists');
     } else {
       setError('');
@@ -59,25 +65,25 @@ export default function MemberList() {
           </tr>
         </thead>
         <tbody>
-          {team.members.map((member, index) => (
+          {members.map((member, index) => (
             <tr key={member.id}>
               <td>{member.name}</td>
               <td>
                 {index > 0 && (
-                <ActionIcon size={16} onClick={() => setTeam(swapMembers(team, index - 1, index))}>
+                <ActionIcon size={16} onClick={() => setMembers(R.move(index, index - 1, members))}>
                   <ArrowUp />
                 </ActionIcon>
                 )}
               </td>
               <td>
-                {index < team.size - 1 && (
-                <ActionIcon size={16} onClick={() => setTeam(swapMembers(team, index, index + 1))}>
+                {index < members.length - 1 && (
+                <ActionIcon size={16} onClick={() => setMembers(R.move(index, index + 1, members))}>
                   <ArrowDown />
                 </ActionIcon>
                 )}
               </td>
               <td>
-                <ActionIcon size={16} onClick={() => setTeam(shrinkTeam(team, index))}>
+                <ActionIcon size={16} onClick={() => setMembers(R.remove(index, 1, members))}>
                   <Trash />
                 </ActionIcon>
               </td>

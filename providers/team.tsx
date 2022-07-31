@@ -1,45 +1,83 @@
-import { createContext, useContext, useMemo } from 'react';
+import {
+  createContext, Dispatch, SetStateAction, useCallback, useContext, useMemo, useState,
+} from 'react';
 import * as React from 'react';
-import { EMPTY_TEAM, Member, Team } from '../models/team';
+import { Member, useMemberUnidirectionalConnection } from '../models/team';
 import { loadFromStorage } from '../utils/persistence';
 import { arraysEqual } from '../utils/helpers';
 import { notifyLoadedInitial, notifyResetPartitions } from '../utils/notifications';
 
 type TeamContextType = {
-    team: Team
     members: Member[]
-    setTeam: (team: Team) => void
+    setMembers: Dispatch<SetStateAction<Member[]>>
     partitions: number[]
-    setPartitions: (parts: number[]) => void
+    setPartitions: Dispatch<SetStateAction<number[]>>
+    getWeight: (rowIndex: number, colIndex: number) => number,
+    setWeight: (rowIndex: number, colIndex: number, update: (prevWeight: number) => number) => void,
+    getWeights: () => { srcIdx: number, trgIdx: number, forward: number }[],
+    getMatrix: () => number[][],
+    getDiagonalMatrix: () => number[][],
+    setDiagonalMatrix: (matrix: number[][]) => void,
 }
 
 const Context = createContext<TeamContextType | null>(null);
 
 export function TeamProvider({ children }: { children: any }) {
-  const [partitions, dispatchPartitions] = React.useState<number[]>([]);
-  const [team, dispatchTeam] = React.useState<Team>(EMPTY_TEAM);
-  const teamContext = useMemo<TeamContextType>(() => ({
-    team,
-    members: team.members,
-    setTeam: (newTeam: Team) => {
-      if (partitions.length > 0 && !arraysEqual(team.connectedness, newTeam.connectedness)) {
-        notifyResetPartitions();
-        dispatchPartitions([]);
+  const [members, dispatchMembers] = useState<Member[]>([]);
+  const {
+    getWeight, setWeight, getWeights, getMatrix, setDiagonalMatrix, getDiagonalMatrix,
+  } = useMemberUnidirectionalConnection(members);
+  const [partitions, setPartitions] = useState<number[]>([]);
+
+  const setMembers = useCallback((ssa: SetStateAction<Member[]>) => {
+    dispatchMembers((prevMembers: Member[]) => {
+      const newMembers = typeof ssa === 'function' ? ssa(prevMembers) : ssa;
+      if (!arraysEqual(prevMembers.map((m) => m.id), newMembers.map((m) => m.id))) {
+        setPartitions((prevParts) => {
+          if (prevParts.length > 0) {
+            notifyResetPartitions();
+          }
+          return [];
+        });
       }
-      dispatchTeam(newTeam);
-    },
+      return newMembers;
+    });
+  }, []);
+
+  const teamContext = useMemo<TeamContextType>(() => ({
+    members,
+    setMembers,
     partitions,
-    setPartitions: dispatchPartitions,
-  }), [team, partitions]);
+    setPartitions,
+    getWeight,
+    setWeight,
+    getWeights,
+    getMatrix,
+    getDiagonalMatrix,
+    setDiagonalMatrix,
+  }), [
+    members,
+    setMembers,
+    partitions,
+    getWeight,
+    setWeight,
+    getWeights,
+    getMatrix,
+    getDiagonalMatrix,
+    setDiagonalMatrix,
+  ]);
 
   React.useEffect(() => {
     const data = loadFromStorage('default');
     if (data != null) {
       const { team: loadedTeam, partitions: loadedPartitions } = data;
-      dispatchTeam(loadedTeam);
-      dispatchPartitions(loadedPartitions);
+      console.log(loadedTeam);
+      dispatchMembers(loadedTeam.members);
+      setDiagonalMatrix(loadedTeam.connectedness);
+      setPartitions(loadedPartitions);
       notifyLoadedInitial();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [/* run only once on init */]);
 
   return (
