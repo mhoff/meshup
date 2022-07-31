@@ -52,7 +52,7 @@ export default function Pairing({
     setAlternateGroupSizes([
       lower, upper,
     ]);
-  }, [groupSize]);
+  }, [groupSize, members]);
 
   React.useEffect(() => {
     handleAlternateGroupSizesInput([groupSize, groupSize + 1]);

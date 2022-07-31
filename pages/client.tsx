@@ -8,7 +8,7 @@ import MemberSelect from '../components/memberSelect';
 import Shell from '../components/shell';
 import { Member } from '../models/collector';
 import { NetworkState } from '../utils/collector';
-import { useCollectorClient } from './_collector.hook';
+import useCollectorClient from '../hooks/_pollClient.hook';
 
 export default function CollectorClient() {
   const router = useRouter();

@@ -3,10 +3,10 @@ import {
 } from 'react';
 import { Member, WeightUpdate } from '../models/collector';
 import {
-  CollectorServer, CollectorClient, CollectorStateClient, CollectorStateServer,
+  CollectorServer, CollectorStateServer,
 } from '../utils/collector';
 
-export function useCollectorServer(
+export default function useCollectorServer(
   members: Member[],
   handleUpdates: (_: WeightUpdate[]) => void,
 ) {
@@ -34,24 +34,4 @@ export function useCollectorServer(
   }, []);
 
   return { collectorState, runCollector, stopCollector };
-}
-
-export function useCollectorClient() {
-  const workerRef: any = useRef();
-  const [collectorState, setCollectorState] = useState<CollectorStateClient>();
-
-  useEffect(() => () => {
-    // cleanup
-    workerRef.current?.destroy(); // TODO implement
-  }, []);
-
-  const runCollector = useCallback((peerId: string) => {
-    workerRef.current = new CollectorClient(peerId, setCollectorState);
-  }, []);
-
-  const setRating = useCallback((srcId: string, trgId: string, weight: number) => {
-    workerRef.current.updateWeight(srcId, trgId, weight);
-  }, []);
-
-  return { collectorState, runCollector, setRating };
 }

@@ -77,6 +77,7 @@ export function TeamProvider({ children }: { children: any }) {
       setPartitions(loadedPartitions);
       notifyLoadedInitial();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [/* run only once on init */]);
 
   return (

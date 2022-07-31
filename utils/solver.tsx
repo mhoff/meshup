@@ -44,8 +44,6 @@ export default async function partition(conn: Connectedness, nPartitions: number
     })).filter(({ trg, w }) => !Number.isNaN(w) && w > 0),
   }));
 
-  console.log(edgeMap);
-
   const Module = await getModule();
 
   const inputIntArrPtr = inputArrayInt32(Module);

@@ -4,10 +4,10 @@ import * as React from 'react';
 import { useCallback } from 'react';
 import ConnectionGrid from '../components/connectionGrid';
 import MemberGraph from '../components/memberGraph';
+import useCollectorServer from '../hooks/_pollServer.hook';
 import { WeightUpdate } from '../models/collector';
 import { useMemberConnection } from '../models/team';
 import { useTeamContext } from '../providers/team';
-import { useCollectorServer } from './_collector.hook';
 
 const CollectorStatus = dynamic(() => import('../components/collectorStatus'), { ssr: false });
 
@@ -34,6 +34,7 @@ export default function PollPage() {
 
   React.useEffect(() => {
     runCollector();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
