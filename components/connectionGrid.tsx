@@ -47,20 +47,20 @@ export default function ConnectionGrid({ members, getWeight, setWeight }: Connec
               <th>
                 {setWeight !== undefined
                 && (
-                <Center> 
+                <Center>
                   <SegmentedControl
                     radius="lg"
-                    onChange={(value) => setMode(Number.parseInt(value)) }
-                    color = {Modes[mode].color}
+                    onChange={(value) => setMode(Number.parseInt(value, 10))}
+                    color={Modes[mode].color}
                     data={
-                      Modes.map((mode,i) => {
-                        const ModeIcon = mode.icon;
+                      Modes.map((m, i) => {
+                        const ModeIcon = m.icon;
                         return ({
                           label: (
-                            <Center> 
+                            <Center>
                               <ModeIcon size={16} />
-                            </Center>), 
-                          value: `${i}`
+                            </Center>),
+                          value: `${i}`,
                         });
                       })
                     }
