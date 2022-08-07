@@ -1,11 +1,19 @@
 .connectionGrid {
-    th {
+    th:not(:first-child) {
         max-width: 100px;
         overflow-wrap: break-word;
         word-break: break-word;
-        text-align: center !important;
+        text-align: left !important;
         vertical-align: bottom;
         hyphens: auto;
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        max-height: 140px;
+    }
+
+    th:first-child {
+        max-width: 100px;
+        vertical-align: center;
     }
     
     tr > td:first-child {
@@ -13,7 +21,7 @@
         max-width: 140px;
         overflow-wrap: break-word;
         word-break: break-word;
-        text-align: center;
+        text-align: left;
         hyphens: auto;
     }
 }

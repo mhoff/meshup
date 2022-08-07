@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Table, Center, Button,
+  Table, Center, Button, SegmentedControl,
 } from '@mantine/core';
 import { Plus, Minus, Icon } from 'tabler-icons-react';
 import * as React from 'react';
@@ -47,17 +47,24 @@ export default function ConnectionGrid({ members, getWeight, setWeight }: Connec
               <th>
                 {setWeight !== undefined
                 && (
-                <Center>
-                  <Button
-                    compact
-                    onClick={() => setMode((mode + 1) % Modes.length)}
-                    color={Modes[mode].color}
-                  >
-                    {(() => {
-                      const ModeIcon = Modes[mode].icon;
-                      return (<ModeIcon size={16} />);
-                    })()}
-                  </Button>
+                <Center> 
+                  <SegmentedControl
+                    radius="lg"
+                    onChange={(value) => setMode(Number.parseInt(value)) }
+                    color = {Modes[mode].color}
+                    data={
+                      Modes.map((mode,i) => {
+                        const ModeIcon = mode.icon;
+                        return ({
+                          label: (
+                            <Center> 
+                              <ModeIcon size={16} />
+                            </Center>), 
+                          value: `${i}`
+                        });
+                      })
+                    }
+                  />
                 </Center>
                 )}
               </th>
@@ -72,9 +79,7 @@ export default function ConnectionGrid({ members, getWeight, setWeight }: Connec
             {members.map((rowMember, rowIndex) => (
               <tr key={`row-${rowMember.id}`}>
                 <td className={styles.rowHeader}>
-                  <Center>
-                    {rowMember.name}
-                  </Center>
+                  {rowMember.name}
                 </td>
                 {members.map((colMember, colIndex) => {
                   if (rowIndex === colIndex) {
