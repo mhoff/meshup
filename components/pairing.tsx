@@ -2,12 +2,16 @@
 
 import {
   Box,
-  Button, InputWrapper, NumberInput, RangeSlider,
+  Button, InputWrapper, RangeSlider,
 } from '@mantine/core';
-import { FormEvent, useCallback, useState } from 'react';
+import {
+  FormEvent, useCallback, useMemo, useState,
+} from 'react';
 import * as React from 'react';
+import * as R from 'ramda';
 import partition from '../utils/solver';
 import { Member } from '../models/collector';
+import styles from './Pairing.module.scss';
 
 interface PairingProps {
   members: Member[],
@@ -19,82 +23,132 @@ interface PairingProps {
 export default function Pairing({
   members, partitions, setPartitions, getMatrix,
 }: PairingProps) {
-  const [groupSize, setGroupSize] = useState(2);
-  const [alternateGroupSizes, setAlternateGroupSizes] = useState<[number, number]>([0, 1]);
+  const [groupCounts, setGroupCounts] = useState<[number, number]>([0, 0]);
+  const [groupSizes, setGroupSizes] = useState<[number, number]>([0, 0]);
+  const [inputError, setInputError] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState<Boolean>(false);
 
-  // const setPartitioningRequest = usePartitioner((resp: any) => {
-  //   setLoading(false);
-  //   setPartitioning((resp.data as PartitioningResponse).partitions);
-  // });
+  const isGroupCountValid = useCallback((count: number) => {
+    const [minSize, maxSize] = groupSizes;
+    return count * minSize <= members.length && count * maxSize >= members.length;
+  }, [members, groupSizes]);
+
+  const validGroupCounts = useMemo(
+    () => R.range(groupCounts[0], groupCounts[1] + 1).filter(isGroupCountValid),
+    [groupCounts, isGroupCountValid],
+  );
 
   const handleGeneratorSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // const [lower, upper] = alternateGroupSizes;
-    // const req: PartitioningRequest = {
-    //   connectedness: team.connectedness,
-    //   groupSize,
-    //   alternateGroupSizes: [], // new Array(upper - lower + 1).fill(0).map((_, i) => lower + i),
-    // };
+    const [minSize, maxSize] = groupSizes;
+
     setLoading(true);
-    // setPartitioningRequest(req);
-    setPartitions(await partition(getMatrix(), Math.round(members.length / groupSize)));
+    setInputError(undefined);
+    const partitionResult = await partition(getMatrix(), validGroupCounts, minSize, maxSize);
+    if (partitionResult === null) {
+      setInputError('Mesh:up failed to compute a result using the given parameterization.'
+      + ' This does not imply there is none.');
+    } else {
+      setPartitions(partitionResult);
+    }
     setLoading(false);
   };
 
-  const handleAlternateGroupSizesInput = useCallback((value: [number, number]) => {
-    let [lower, upper] = value;
-    [lower, upper] = [
-      Math.max(Math.min(lower, groupSize), 1),
-      Math.min(Math.max(upper, groupSize), members.length - 1),
-    ];
-    upper = lower === upper ? upper + 1 : upper;
-    setAlternateGroupSizes([
-      lower, upper,
-    ]);
-  }, [groupSize, members]);
+  React.useEffect(() => {
+    setGroupCounts(([prevMin, prevMax]) => (prevMax === 0 ? [1, members.length] : [prevMin, prevMax]));
+  }, [members]);
+
+  const groupCountConf = React.useMemo(() => ({
+    min: 1,
+    max: members.length,
+    marks: R.range(1, members.length + 1).map((i) => ({
+      value: i,
+      label: (
+        <span className={isGroupCountValid(i) || i < groupCounts[0] || i > groupCounts[1]
+          ? '' : styles.illegalMark}
+        >
+          {i}
+        </span>
+      ),
+    })),
+  }), [members, isGroupCountValid, groupCounts]);
+
+  const groupSizeConf = React.useMemo(() => {
+    const min = Math.max(...[1, Math.floor(members.length / groupCounts[1])].filter(Number.isFinite));
+    const max = Math.min(...[members.length, Math.ceil(members.length / groupCounts[0])].filter(Number.isFinite));
+    return {
+      min,
+      max,
+      marks: R.range(min, max + 1).map((i) => ({ value: i, label: i })),
+    };
+  }, [members, groupCounts]);
 
   React.useEffect(() => {
-    handleAlternateGroupSizesInput([groupSize, groupSize + 1]);
-  }, [groupSize, handleAlternateGroupSizesInput]);
+    setGroupSizes(([prevMin, prevMax]) => ((prevMax === 0)
+      ? [groupSizeConf.min, groupSizeConf.max] // init range
+      : [
+        Math.max(groupSizeConf.min, Math.min(prevMin, groupSizeConf.max)),
+        Math.min(groupSizeConf.max, Math.max(prevMax, groupSizeConf.min)),
+      ] // update boundaries
+    ));
+  }, [groupSizeConf]);
 
   return (
-    <div>
+    <div className={styles.pairing}>
       {members.length > 1 ? (
         <Box sx={{ maxWidth: 300 }} mx="0">
           <form onSubmit={handleGeneratorSubmit}>
-            <NumberInput
-              label="Size of pairings"
-              defaultValue={2}
-              min={2}
-              max={members.length}
-              onChange={(value) => value !== undefined && setGroupSize(value)}
-            />
-            <InputWrapper label="Alternate group sizes">
+            <InputWrapper label={`Number of groups: ${groupCounts[0]} - ${groupCounts[1]}`}>
               <RangeSlider
                 label={null}
-                disabled={members.length % groupSize === 0}
-                min={1}
-                max={members.length - 1}
                 step={1}
-                minRange={1}
-                marks={new Array(members.length - 1).fill(0).map((_, i) => ({ value: i + 1, label: i + 1 }))}
-                value={alternateGroupSizes}
-                onChange={([lower, upper]) => handleAlternateGroupSizesInput([
-                  Number.isNaN(lower) ? alternateGroupSizes[0] : lower,
-                  Number.isNaN(upper) ? alternateGroupSizes[1] : upper,
-                ])}
-                style={{ marginBottom: '30px' }}
+                minRange={0}
+                min={groupCountConf.min}
+                max={groupCountConf.max}
+                marks={groupCountConf.marks}
+                value={groupCounts}
+                onChange={setGroupCounts}
+                style={{ marginBottom: '40px' }}
               />
             </InputWrapper>
-
-            <Button type="submit" fullWidth>Generate</Button>
+            <InputWrapper label={`Desired group sizes: ${groupSizes[0]} - ${groupSizes[1]}`}>
+              <RangeSlider
+                label={null}
+                step={1}
+                minRange={0}
+                min={groupSizeConf.min}
+                max={groupSizeConf.max}
+                marks={groupSizeConf.marks}
+                value={groupSizes}
+                onChange={setGroupSizes}
+                style={{ marginBottom: '40px' }}
+              />
+            </InputWrapper>
+            { R.range(groupCounts[0], groupCounts[1] + 1).some(R.complement(isGroupCountValid))
+              && (
+              <div style={{ fontSize: 10 }}>
+                Group counts indicated in
+                {' '}
+                <span className={styles.illegalMark}>red</span>
+                {' '}
+                are not feasible given the selected group sizes.
+                These group counts will be ignored.
+              </div>
+              )}
+            <br />
+            <Button type="submit" fullWidth disabled={validGroupCounts.length === 0}>Generate</Button>
           </form>
         </Box>
       ) : (
         <p>
           You need to enter more team members to generate meaningful pairings.
         </p>
+      )}
+      {inputError
+      && (
+        <div>
+          {inputError}
+        </div>
       )}
       {(loading) && (
         <span>Loading...</span>

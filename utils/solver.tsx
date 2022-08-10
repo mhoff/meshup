@@ -1,4 +1,5 @@
 /* eslint-disable no-underscore-dangle */
+import * as R from 'ramda';
 import { Connectedness } from '../models/team';
 import { inputArrayFloat32, inputArrayInt32 } from './helpers';
 
@@ -32,7 +33,13 @@ function partitionScore(parts: Int32Array, conns: number[][]): number {
   return score;
 }
 
-export default async function partition(conn: Connectedness, nPartitions: number): Promise<number[]> {
+export default async function partition(
+  conn: Connectedness,
+  partitionCounts: number[],
+  minSize: number,
+  maxSize: number,
+  maxIterationsPerCount: number = 40,
+): Promise<number[]> {
   const negWeight = Math.min(0, Math.min(...conn.map((row) => Math.min(...row.filter(Number.isFinite)))));
   const maxWeight = Math.max(...conn.map((row) => Math.max(...row.filter(Number.isFinite)))) - negWeight;
 
@@ -51,14 +58,13 @@ export default async function partition(conn: Connectedness, nPartitions: number
 
   const nNodes = conn.length;
   const nEdges = nNodes * nNodes;
-  const imbalance = 0.00;
+  const imbalance = 0.0;
 
   const [, nodePtr] = inputIntArrPtr([nNodes]);
   const [, xadjPtr] = inputIntArrPtr(edgeMap.map(({ edges }) => edges.length)
     .reduce<number[]>((acc, v) => (acc.length === 0 ? [0, v] : acc.concat([acc[acc.length - 1] + v])), []));
   const [, adjncyPtr] = inputIntArrPtr(edgeMap.flatMap(({ edges }) => edges.map(({ trg }) => trg)));
   const [, adjcwgtPtr] = inputIntArrPtr(edgeMap.flatMap(({ edges }) => edges.map(({ w }) => w)));
-  const [, npartsPtr] = inputIntArrPtr([nPartitions]);
   const [, imbalancePtr] = inputFloatArrPtr([imbalance]);
   const edgecutPtr = Module._malloc(nEdges * Int32Array.BYTES_PER_ELEMENT);
   const partsPtr = Module._malloc(nNodes * Int32Array.BYTES_PER_ELEMENT);
@@ -66,39 +72,50 @@ export default async function partition(conn: Connectedness, nPartitions: number
   const vwgtPtr = null;
 
   const suppressOutput = false;
+  const perfectBalance = true;
   const mode = 5;
 
   let bestPartitioning = null;
   let bestPartitioningScore = Infinity;
 
-  for (let i = 1; i > 0; i--) {
-    const seed = Math.round(Math.random() * 10000);
+  for (let i = 0; i < partitionCounts.length; i++) {
+    let iterations = maxIterationsPerCount;
+    // eslint-disable-next-line no-plusplus
+    while (bestPartitioning === null || iterations-- > 0) {
+      const [, npartsPtr] = inputIntArrPtr([partitionCounts[i]]);
+      const seed = Math.round(Math.random() * 10000);
 
-    Module._kaffpa(
-      nodePtr,
-      vwgtPtr,
-      xadjPtr,
-      adjcwgtPtr,
-      adjncyPtr,
-      npartsPtr,
-      imbalancePtr,
-      suppressOutput,
-      seed,
-      mode,
-      edgecutPtr,
-      partsPtr,
-    );
+      Module._kaffpa_balance(
+        nodePtr,
+        vwgtPtr,
+        xadjPtr,
+        adjcwgtPtr,
+        adjncyPtr,
+        npartsPtr,
+        imbalancePtr,
+        perfectBalance,
+        suppressOutput,
+        seed,
+        mode,
+        edgecutPtr,
+        partsPtr,
+      );
 
-    // const edgecutArray = new Int32Array(Module.HEAP32.buffer, edgecutPtr, nEdges);
-    const partsArray = new Int32Array(Module.HEAP32.buffer, partsPtr, nNodes);
+      // const edgecutArray = new Int32Array(Module.HEAP32.buffer, edgecutPtr, nEdges);
+      const partsArray = new Int32Array(Module.HEAP32.buffer, partsPtr, nNodes);
+      const parts = [...partsArray.values()];
 
-    const score = partitionScore(partsArray, conn);
+      const score = partitionScore(partsArray, conn);
+      const partitionSizes = R.values(R.countBy(R.identity, parts));
 
-    console.log(`Found score ${score}`);
+      console.log(`Found score ${score}, sizes = ${partitionSizes}, count = ${partitionCounts[i]}`);
 
-    if (score < bestPartitioningScore) {
-      bestPartitioningScore = score;
-      bestPartitioning = [...partsArray.values()];
+      if (score < bestPartitioningScore
+        && Math.min(...partitionSizes) >= minSize
+        && Math.max(...partitionSizes) <= maxSize) {
+        bestPartitioningScore = score;
+        bestPartitioning = parts;
+      }
     }
   }
 
