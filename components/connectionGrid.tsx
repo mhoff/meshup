@@ -78,7 +78,7 @@ export default function ConnectionGrid({ members, getWeight, setWeight }: Connec
           <tbody>
             {members.map((rowMember, rowIndex) => (
               <tr key={`row-${rowMember.id}`}>
-                <td className={styles.rowHeader}>
+                <td>
                   {rowMember.name}
                 </td>
                 {members.map((colMember, colIndex) => {
