@@ -24,9 +24,24 @@ export default function Pairing({
   members, partitions, setPartitions, getMatrix,
 }: PairingProps) {
   const [groupCounts, setGroupCounts] = useState<[number, number]>([0, 0]);
-  const [groupSizes, setGroupSizes] = useState<[number, number]>([0, 0]);
+  const [userGroupSizes, setUserGroupSizes] = useState<[number, number] | undefined>();
   const [inputError, setInputError] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState<Boolean>(false);
+
+  const groupSizeConf = React.useMemo(() => {
+    const min = Math.max(...[1, Math.floor(members.length / groupCounts[1])].filter(Number.isFinite));
+    const max = Math.min(...[members.length, Math.ceil(members.length / groupCounts[0])].filter(Number.isFinite));
+    return {
+      min,
+      max,
+      marks: R.range(min, max + 1).map((i) => ({ value: i, label: i })),
+    };
+  }, [members, groupCounts]);
+
+  const groupSizes = useMemo(
+    () => userGroupSizes || [groupSizeConf.min, groupSizeConf.max],
+    [userGroupSizes, groupSizeConf],
+  ) as [number, number];
 
   const isGroupCountValid = useCallback((count: number) => {
     const [minSize, maxSize] = groupSizes;
@@ -73,22 +88,12 @@ export default function Pairing({
     })),
   }), [members, isGroupCountValid, groupCounts]);
 
-  const groupSizeConf = React.useMemo(() => {
-    const min = Math.max(...[1, Math.floor(members.length / groupCounts[1])].filter(Number.isFinite));
-    const max = Math.min(...[members.length, Math.ceil(members.length / groupCounts[0])].filter(Number.isFinite));
-    return {
-      min,
-      max,
-      marks: R.range(min, max + 1).map((i) => ({ value: i, label: i })),
-    };
-  }, [members, groupCounts]);
-
   React.useEffect(() => {
-    setGroupSizes(([prevMin, prevMax]) => ((prevMax === 0)
-      ? [groupSizeConf.min, groupSizeConf.max] // init range
+    setUserGroupSizes((prevSizes) => ((prevSizes === undefined)
+      ? undefined // init range
       : [
-        Math.max(groupSizeConf.min, Math.min(prevMin, groupSizeConf.max)),
-        Math.min(groupSizeConf.max, Math.max(prevMax, groupSizeConf.min)),
+        Math.max(groupSizeConf.min, Math.min(prevSizes[0], groupSizeConf.max)),
+        Math.min(groupSizeConf.max, Math.max(prevSizes[1], groupSizeConf.min)),
       ] // update boundaries
     ));
   }, [groupSizeConf]);
@@ -120,7 +125,7 @@ export default function Pairing({
                 max={groupSizeConf.max}
                 marks={groupSizeConf.marks}
                 value={groupSizes}
-                onChange={setGroupSizes}
+                onChange={setUserGroupSizes}
                 style={{ marginBottom: '40px' }}
               />
             </InputWrapper>
