@@ -1,5 +1,4 @@
 /** @type {import('next').NextConfig} */
-const WorkerPlugin = require('worker-plugin');
 
 const nextConfig = {
   reactStrictMode: true,
@@ -11,12 +10,7 @@ const nextConfig = {
     'eslint:recommended',
     'plugin:@next/next/recommended',
   ],
-  plugins: [
-    new WorkerPlugin({
-      // use "self" as the global object when receiving hot updates.
-      globalObject: 'self',
-    }),
-  ],
+  plugins: [],
 };
 
 module.exports = nextConfig;
