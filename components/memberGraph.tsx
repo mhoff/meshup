@@ -8,6 +8,7 @@ interface MemberNode extends d3.SimulationNodeDatum {
   id: string;
   r: number;
   name: string;
+  partition: number;
 }
 
 interface MemberLink extends d3.SimulationLinkDatum<MemberNode> {
@@ -48,25 +49,26 @@ export default function MemberGraph({ members, getWeights, partitions, maxWidth 
   const [animatedLinks, setAnimatedLinks] = useState<MemberLink[]>([]);
   const nodeRadius = useMemo(() => Math.max(...members.map((member) => member.name.length * 4), 25), [members]);
 
-  const [hoveredNodeIdx, setHoveredNodeIdx] = useState<number | null>(null);
+  const [hoveredNode, setHoveredNode] = useState<MemberNode | null>(null);
 
   const nodes = useMemo(
     () =>
-      members.map((member) => {
+      members.map((member, i) => {
         const oldNode = animatedNodes.find((node) => node.id === member.id);
         if (oldNode) {
-          return Object.assign(oldNode, { r: nodeRadius });
+          return Object.assign(oldNode, { r: nodeRadius, partition: partitions[i] });
         }
         return {
           id: member.id,
           name: member.name,
+          partition: partitions[i],
           r: nodeRadius,
           x: NaN,
           y: NaN,
         };
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [members, nodeRadius]
+    [members, partitions, nodeRadius]
   );
 
   const links = useMemo(
@@ -145,6 +147,15 @@ export default function MemberGraph({ members, getWeights, partitions, maxWidth 
             ${tx - Math.cos(orthoSourceTarget) * tw},${ty - Math.sin(orthoSourceTarget) * tw}`;
   }
 
+  function isLinkHighlighted(link: MemberLink) {
+    return (
+      hoveredNode !== null &&
+      partitions !== null &&
+      hoveredNode?.partition === link.source.partition &&
+      hoveredNode?.partition === link.target.partition
+    );
+  }
+
   const nodeColors: string[] = useMemo(() => {
     if (partitions.length === 0) {
       return members.map(() => defaultNodeColor);
@@ -182,7 +193,7 @@ export default function MemberGraph({ members, getWeights, partitions, maxWidth 
                 <polyline
                   key={`link-${link.source.id}-${link.target.id}`}
                   points={`${polylinePoints(link)}`}
-                  style={{ fill: linkColorMap[Math.sign(link.strength) + 1] }}
+                  style={{ fill: isLinkHighlighted(link) ? 'red' : linkColorMap[Math.sign(link.strength) + 1] }}
                 />
               ) : (
                 <line
@@ -191,7 +202,7 @@ export default function MemberGraph({ members, getWeights, partitions, maxWidth 
                   x2={link.target.x}
                   y1={link.source.y}
                   y2={link.target.y}
-                  style={{ stroke: linkColorMap[Math.sign(link.strength) + 1] }}
+                  style={{ stroke: isLinkHighlighted(link) ? 'red' : linkColorMap[Math.sign(link.strength) + 1] }}
                   strokeWidth={Math.min(2 * nodeRadius, Math.abs(link.strength) + 1)}
                   strokeDasharray={link.strength === 0 ? 5 : 0}
                 />
@@ -204,17 +215,15 @@ export default function MemberGraph({ members, getWeights, partitions, maxWidth 
               transform={`translate(${node.x}, ${node.y})`}
               key={node.id}
               onMouseEnter={() => {
-                setHoveredNodeIdx(i);
+                setHoveredNode(node);
               }}
               onMouseLeave={() => {
-                if (hoveredNodeIdx === i) {
-                  setHoveredNodeIdx(null);
+                if (hoveredNode === node) {
+                  setHoveredNode(null);
                 }
               }}
             >
-              {hoveredNodeIdx !== null && partitions !== null && partitions[i] === partitions[hoveredNodeIdx] && (
-                <circle fill="red" r={node.r + 2} />
-              )}
+              {hoveredNode != null && node.partition === hoveredNode?.partition && <circle fill="red" r={node.r + 2} />}
               <circle fill={nodeColors[i]} r={node.r} />
               <text y={5} fill="black" fontSize={13} textAnchor="middle">
                 {node.name}
