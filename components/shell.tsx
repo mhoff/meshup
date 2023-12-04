@@ -72,17 +72,8 @@ const navItems = [
 function NavbarContent({ hide }: { hide: () => void }) {
   const theme = useMantineTheme();
 
-  const {
-    members,
-    setMembers,
-    partitions,
-    setPartitions,
-    getDiagonalMatrix,
-    setDiagonalMatrix,
-  } = useTeamContext();
-  const openFileRef = useRef<() => void>() as React.MutableRefObject<
-    () => void
-  >;
+  const { members, setMembers, partitions, setPartitions, getDiagonalMatrix, setDiagonalMatrix } = useTeamContext();
+  const openFileRef = useRef<() => void>() as React.MutableRefObject<() => void>;
 
   const persistenceItems = [
     {
@@ -155,13 +146,9 @@ function NavbarContent({ hide }: { hide: () => void }) {
           </UnstyledButton>
         </Link>
       ))}
-      <Divider style={{ marginTop: '16px' }} />
+      <Divider style={{ marginTop: '16px', marginBottom: '16px' }} />
       {persistenceItems.map((item) => (
-        <UnstyledButton
-          style={buttonStyle}
-          onClick={item.handler}
-          key={item.label}
-        >
+        <UnstyledButton style={buttonStyle} onClick={item.handler} key={item.label}>
           <Group>
             <ThemeIcon color={item.color} variant="light">
               {item.icon}
@@ -176,17 +163,17 @@ function NavbarContent({ hide }: { hide: () => void }) {
         setPartitions={setPartitions}
         openFileRef={openFileRef}
       />
+      <Divider style={{ marginTop: '16px', marginBottom: '16px' }} />
+      <Group justify="center">
+        <Text size="sm">
+          Version: <Link href={process.env.NEXT_PUBLIC_VERSION_URL!}>{process.env.NEXT_PUBLIC_VERSION_LABEL}</Link>
+        </Text>
+      </Group>
     </>
   );
 }
 
-export default function Shell({
-  children,
-  nav,
-}: {
-  children: any;
-  nav: boolean;
-}) {
+export default function Shell({ children, nav }: { children: any; nav: boolean }) {
   const theme = useMantineTheme();
   const [opened, { toggle, close }] = useDisclosure();
 
@@ -208,13 +195,7 @@ export default function Shell({
     >
       <AppShell.Header>
         <Group h="100%" px="sm">
-          <Burger
-            opened={opened}
-            onClick={toggle}
-            size="sm"
-            color={theme.colors.gray[6]}
-            hiddenFrom="md"
-          />
+          <Burger opened={opened} onClick={toggle} size="sm" color={theme.colors.gray[6]} hiddenFrom="md" />
           <Title order={1}>Mesh:up</Title>
         </Group>
       </AppShell.Header>

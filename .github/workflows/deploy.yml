@@ -21,8 +21,15 @@ jobs:
           # If source files changed but packages didn't, rebuild from a prior cache.
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+
+      - name: Set environment variables for version tracking
+        run: |
+          echo "NEXT_PUBLIC_VERSION_LABEL=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_VERSION_URL=https://github.com/mhoff/meshup/commit/${{ github.sha }}" >> $GITHUB_ENV
+
       - name: Build
         run: npm run build
+
       - name: Deploy
         uses: up9cloud/action-rsync@v1.4
         env:
