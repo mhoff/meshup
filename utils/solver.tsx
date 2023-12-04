@@ -27,7 +27,14 @@ async function getModule(): Promise<any> {
   return moduleSingleton;
 }
 
-function partitionScore(parts: Int32Array, conns: number[][]): number {
+interface Partitioning {
+  partitionPerNode: number[];
+  partitionSizes: number[];
+  sumOfInternalWeights: number;
+  partitionSizeSpread: number;
+}
+
+function getSumOfWeights(parts: Int32Array, conns: number[][]): number {
   let score = 0;
 
   for (let i = 0; i < parts.length; i++) {
@@ -40,6 +47,17 @@ function partitionScore(parts: Int32Array, conns: number[][]): number {
   }
 
   return score;
+}
+
+function derivePartitioning(parts: Int32Array, conns: number[][]): Partitioning {
+  const partitionPerNode = [...parts.values()];
+  const partitionSizes = R.values(R.countBy(R.identity, partitionPerNode));
+  return {
+    partitionPerNode,
+    partitionSizes,
+    sumOfInternalWeights: getSumOfWeights(parts, conns),
+    partitionSizeSpread: Math.max(...partitionSizes) - Math.min(...partitionSizes),
+  };
 }
 
 export default async function partition(
@@ -89,13 +107,12 @@ export default async function partition(
   const perfectBalance = true;
   const mode = 5;
 
-  let bestPartitioning = null;
-  let bestPartitioningScore = Infinity;
+  let best: Partitioning | null = null;
 
   for (let i = 0; i < partitionCounts.length; i++) {
     let iterations = maxIterationsPerCount;
     // eslint-disable-next-line no-plusplus
-    while (bestPartitioning === null || iterations-- > 0) {
+    while (best === null || iterations-- > 0) {
       const [, npartsPtr] = inputIntArrPtr([partitionCounts[i]]);
       const seed = Math.round(Math.random() * 10000);
 
@@ -117,23 +134,30 @@ export default async function partition(
 
       // const edgecutArray = new Int32Array(Module.HEAP32.buffer, edgecutPtr, nEdges);
       const partsArray = new Int32Array(Module.HEAP32.buffer, partsPtr, nNodes);
-      const parts = [...partsArray.values()];
 
-      const score = partitionScore(partsArray, conn);
-      const partitionSizes = R.values(R.countBy(R.identity, parts));
-
-      console.log(`Found score ${score}, sizes = ${partitionSizes}, count = ${partitionCounts[i]}`);
+      const curr = derivePartitioning(partsArray, conn);
 
       if (
-        score < bestPartitioningScore &&
-        Math.min(...partitionSizes) >= minSize &&
-        Math.max(...partitionSizes) <= maxSize
+        Math.min(...curr.partitionSizes) >= minSize &&
+        Math.max(...curr.partitionSizes) <= maxSize &&
+        partitionCounts.includes(curr.partitionSizes.length)
       ) {
-        bestPartitioningScore = score;
-        bestPartitioning = parts;
+        console.log(
+          `Partitioning: internal weights = ${curr.sumOfInternalWeights}, sizes = ${curr.partitionSizes}, ` +
+            `spread = ${curr.partitionSizeSpread}, count = ${curr.partitionSizes.length}`
+        );
+
+        if (
+          best == null ||
+          curr.sumOfInternalWeights < best.sumOfInternalWeights ||
+          (curr.sumOfInternalWeights === best.sumOfInternalWeights &&
+            curr.partitionSizeSpread < best.partitionSizeSpread)
+        ) {
+          best = curr;
+        }
       }
     }
   }
 
-  return bestPartitioning!!;
+  return best?.partitionPerNode!!;
 }

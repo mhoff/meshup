@@ -143,10 +143,13 @@ export default function Pairing({ members, partitions, setPartitions, getMatrix 
               />
             </InputWrapper>
             {R.range(groupCounts[0], groupCounts[1] + 1).some(R.complement(isGroupCountValid)) && (
-              <div style={{ fontSize: 10 }}>
-                Group counts indicated in <span className={styles.illegalMark}>red</span> are not feasible given the
-                selected group sizes. These group counts will be ignored.
-              </div>
+              <>
+                <div style={{ fontSize: 10 }}>
+                  Group counts indicated in <span className={styles.illegalMark}>red</span> are not feasible given the
+                  selected group sizes. These group counts will be ignored.
+                </div>
+                <br />
+              </>
             )}
             <br />
             <Button type="submit" fullWidth disabled={validGroupCounts.length === 0}>
