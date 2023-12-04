@@ -5,12 +5,7 @@ const nextConfig = {
   eslint: {
     dirs: ['components', 'models', 'pages', 'providers', 'utils', 'workers'],
   },
-  extends: [
-    'next',
-    'eslint:recommended',
-    'plugin:@next/next/recommended',
-  ],
-  plugins: [],
+  output: 'export',
 };
 
 module.exports = nextConfig;

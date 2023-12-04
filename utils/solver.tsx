@@ -1,21 +1,30 @@
 /* eslint-disable no-underscore-dangle */
+/* eslint-disable no-console */
+/* eslint-disable no-alert */
+
 import * as R from 'ramda';
 import { Connectedness } from '../models/team';
 import { inputArrayFloat32, inputArrayInt32 } from './helpers';
 
-let _Module: any = null;
+let moduleSingleton: any = null;
 async function getModule(): Promise<any> {
-  if (_Module === null) {
+  if (moduleSingleton === null) {
     const path = '/kaffpa.js';
     const ModuleWrapper: any = await import(/* webpackIgnore: true */ path);
 
-    _Module = await ModuleWrapper.default({
-      print(text: string) { console.log(`stdout: ${text}`); },
-      printErr(text: string) { alert(`stderr: ${text}`); },
-      onAbort() { alert('abort'); },
+    moduleSingleton = await ModuleWrapper.default({
+      print(text: string) {
+        console.log(`stdout: ${text}`);
+      },
+      printErr(text: string) {
+        alert(`stderr: ${text}`);
+      },
+      onAbort() {
+        alert('abort');
+      },
     });
   }
-  return _Module;
+  return moduleSingleton;
 }
 
 function partitionScore(parts: Int32Array, conns: number[][]): number {
@@ -38,17 +47,19 @@ export default async function partition(
   partitionCounts: number[],
   minSize: number,
   maxSize: number,
-  maxIterationsPerCount: number = 40,
+  maxIterationsPerCount: number = 40
 ): Promise<number[]> {
   const negWeight = Math.min(0, Math.min(...conn.map((row) => Math.min(...row.filter(Number.isFinite)))));
   const maxWeight = Math.max(...conn.map((row) => Math.max(...row.filter(Number.isFinite)))) - negWeight;
 
   const edgeMap = conn.map((row, src) => ({
     src,
-    edges: row.map((w, trg) => ({
-      trg,
-      w: Number.isNaN(w) ? NaN : (maxWeight - w - negWeight),
-    })).filter(({ trg, w }) => !Number.isNaN(w) && w > 0),
+    edges: row
+      .map((w, trg) => ({
+        trg,
+        w: Number.isNaN(w) ? NaN : maxWeight - w - negWeight,
+      }))
+      .filter(({ w }) => !Number.isNaN(w) && w > 0),
   }));
 
   const Module = await getModule();
@@ -61,8 +72,11 @@ export default async function partition(
   const imbalance = 0.0;
 
   const [, nodePtr] = inputIntArrPtr([nNodes]);
-  const [, xadjPtr] = inputIntArrPtr(edgeMap.map(({ edges }) => edges.length)
-    .reduce<number[]>((acc, v) => (acc.length === 0 ? [0, v] : acc.concat([acc[acc.length - 1] + v])), []));
+  const [, xadjPtr] = inputIntArrPtr(
+    edgeMap
+      .map(({ edges }) => edges.length)
+      .reduce<number[]>((acc, v) => (acc.length === 0 ? [0, v] : acc.concat([acc[acc.length - 1] + v])), [])
+  );
   const [, adjncyPtr] = inputIntArrPtr(edgeMap.flatMap(({ edges }) => edges.map(({ trg }) => trg)));
   const [, adjcwgtPtr] = inputIntArrPtr(edgeMap.flatMap(({ edges }) => edges.map(({ w }) => w)));
   const [, imbalancePtr] = inputFloatArrPtr([imbalance]);
@@ -98,7 +112,7 @@ export default async function partition(
         seed,
         mode,
         edgecutPtr,
-        partsPtr,
+        partsPtr
       );
 
       // const edgecutArray = new Int32Array(Module.HEAP32.buffer, edgecutPtr, nEdges);
@@ -110,9 +124,11 @@ export default async function partition(
 
       console.log(`Found score ${score}, sizes = ${partitionSizes}, count = ${partitionCounts[i]}`);
 
-      if (score < bestPartitioningScore
-        && Math.min(...partitionSizes) >= minSize
-        && Math.max(...partitionSizes) <= maxSize) {
+      if (
+        score < bestPartitioningScore &&
+        Math.min(...partitionSizes) >= minSize &&
+        Math.max(...partitionSizes) <= maxSize
+      ) {
         bestPartitioningScore = score;
         bestPartitioning = parts;
       }

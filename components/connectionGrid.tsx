@@ -1,34 +1,32 @@
+import { Button, Center, SegmentedControl, Table } from '@mantine/core';
 import { useState } from 'react';
-import {
-  Table, Center, Button, SegmentedControl,
-} from '@mantine/core';
-import { Plus, Minus, Icon } from 'tabler-icons-react';
-import * as React from 'react';
+import { Icon, Minus, Plus } from 'tabler-icons-react';
+import { Member } from '../models/team';
 import styles from './ConnectionGrid.module.scss';
-import {
-  Member,
-} from '../models/team';
 
 interface InteractionMode {
-  icon: Icon,
-  color: string,
-  func: (_: number) => number
+  icon: Icon;
+  color: string;
+  func: (_: number) => number;
 }
 
-const Modes: InteractionMode[] = [{
-  icon: Plus,
-  color: 'green',
-  func: (v) => v + 1,
-}, {
-  icon: Minus,
-  color: 'red',
-  func: (v) => Math.max(0, v - 1),
-}];
+const Modes: InteractionMode[] = [
+  {
+    icon: Plus,
+    color: 'green',
+    func: (v) => v + 1,
+  },
+  {
+    icon: Minus,
+    color: 'red',
+    func: (v) => Math.max(0, v - 1),
+  },
+];
 
 interface ConnectionGridProps {
-  members: Member[],
-  getWeight: (srcIdx: number, trgIdx: number) => number,
-  setWeight?: (srcIdx: number, trgIdx: number, update: ((prevWeight: number) => number)) => void
+  members: Member[];
+  getWeight: (srcIdx: number, trgIdx: number) => number;
+  setWeight?: (srcIdx: number, trgIdx: number, update: (prevWeight: number) => number) => void;
 }
 
 export default function ConnectionGrid({ members, getWeight, setWeight }: ConnectionGridProps) {
@@ -40,75 +38,70 @@ export default function ConnectionGrid({ members, getWeight, setWeight }: Connec
         <Table
           className={styles.connectionGrid}
           verticalSpacing={4}
-          sx={{ '& tbody tr td': { borderBottom: 0 }, width: 'auto' }}
+          style={{ '& tbody tr td': { borderBottom: 0 }, width: 'auto' }}
+          withRowBorders={false}
         >
-          <thead>
-            <tr>
-              <th>
-                {setWeight !== undefined
-                && (
-                <Center>
-                  <SegmentedControl
-                    radius="lg"
-                    onChange={(value) => setMode(Number.parseInt(value, 10))}
-                    color={Modes[mode].color}
-                    data={
-                      Modes.map((m, i) => {
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>
+                {setWeight !== undefined && (
+                  <Center>
+                    <SegmentedControl
+                      radius="lg"
+                      onChange={(value) => setMode(Number.parseInt(value, 10))}
+                      color={Modes[mode].color}
+                      data={Modes.map((m, i) => {
                         const ModeIcon = m.icon;
-                        return ({
+                        return {
                           label: (
                             <Center>
                               <ModeIcon size={16} />
-                            </Center>),
+                            </Center>
+                          ),
                           value: `${i}`,
-                        });
-                      })
-                    }
-                  />
-                </Center>
+                        };
+                      })}
+                    />
+                  </Center>
                 )}
-              </th>
-              {members.map((member, index) => (
-                <th key={`col-${member.id}`}>
-                  {member.name}
-                </th>
+              </Table.Th>
+              {members.map((member) => (
+                <Table.Th key={`col-${member.id}`}>{member.name}</Table.Th>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
             {members.map((rowMember, rowIndex) => (
-              <tr key={`row-${rowMember.id}`}>
-                <td>
-                  {rowMember.name}
-                </td>
+              <Table.Tr key={`row-${rowMember.id}`}>
+                <Table.Td>{rowMember.name}</Table.Td>
                 {members.map((colMember, colIndex) => {
                   if (rowIndex === colIndex) {
-                    return <td key={`${rowMember.id}/${colMember.id}`} />;
+                    return <Table.Td aria-label="empty self-connection" key={`${rowMember.id}/${colMember.id}`} />;
                   }
                   return (
                     /* eslint-disable-next-line
                        jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */
-                    <td
-                      key={`${rowMember.id}/${colMember.id}`}
-                    >
+                    <Table.Td key={`${rowMember.id}/${colMember.id}`}>
                       <Button
-                        compact
+                        size="compact-xs"
                         fullWidth
                         variant="outline"
-                        onClick={setWeight !== undefined
-                          ? () => setWeight(rowIndex, colIndex, Modes[mode].func)
-                          : undefined}
+                        onClick={
+                          setWeight !== undefined ? () => setWeight(rowIndex, colIndex, Modes[mode].func) : undefined
+                        }
                       >
                         {getWeight(rowIndex, colIndex)}
                       </Button>
-                    </td>
+                    </Table.Td>
                   );
                 })}
-              </tr>
+              </Table.Tr>
             ))}
-          </tbody>
+          </Table.Tbody>
         </Table>
-      ) : 'More team members required.'}
+      ) : (
+        'More team members required.'
+      )}
     </div>
   );
 }

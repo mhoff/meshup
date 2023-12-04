@@ -1,63 +1,99 @@
 import {
   AppShell,
-  Navbar,
-  Header,
-  Text,
-  MediaQuery,
   Burger,
-  useMantineTheme,
-  UnstyledButton,
+  Divider,
   Group,
+  Text,
   ThemeIcon,
   Title,
-  Divider,
+  UnstyledButton,
+  useMantineTheme,
 } from '@mantine/core';
-import * as React from 'react';
-import { useRef, useState } from 'react';
-import {
-  UserPlus, Affiliate, Stack2, GridDots, DeviceFloppy, Download, Upload, LayoutDashboard, Trash, Share,
-} from 'tabler-icons-react';
+import { useDisclosure } from '@mantine/hooks';
 import Link from 'next/link';
-import Importer from './persistence';
-import { deleteStorage, exportJSON, saveToStorage } from '../utils/persistence';
+import * as React from 'react';
+import { useRef } from 'react';
+import {
+  Affiliate,
+  DeviceFloppy,
+  Download,
+  GridDots,
+  LayoutDashboard,
+  Share,
+  Stack2,
+  Trash,
+  Upload,
+  UserPlus,
+} from 'tabler-icons-react';
 import { useTeamContext } from '../providers/team';
-import { notifyLoad, notifyDelete } from '../utils/notifications';
+import { notifyDelete, notifyLoad } from '../utils/notifications';
+import { deleteStorage, exportJSON, saveToStorage } from '../utils/persistence';
+import Importer from './persistence';
 
 const navItems = [
   {
-    icon: <LayoutDashboard size={16} />, color: 'blue', label: 'Overview', path: '/',
+    icon: <LayoutDashboard size={16} />,
+    color: 'blue',
+    label: 'Overview',
+    path: '/',
   },
   {
-    icon: <UserPlus size={16} />, color: 'blue', label: 'Members', path: '/members',
+    icon: <UserPlus size={16} />,
+    color: 'blue',
+    label: 'Members',
+    path: '/members',
   },
   {
-    icon: <Share size={16} />, color: 'blue', label: 'Live Poll', path: '/poll',
+    icon: <Share size={16} />,
+    color: 'blue',
+    label: 'Live Poll',
+    path: '/poll',
   },
   {
-    icon: <GridDots size={16} />, color: 'blue', label: 'Connections', path: '/connections',
+    icon: <GridDots size={16} />,
+    color: 'blue',
+    label: 'Connections',
+    path: '/connections',
   },
   {
-    icon: <Affiliate size={16} />, color: 'blue', label: 'Graph', path: '/graph',
+    icon: <Affiliate size={16} />,
+    color: 'blue',
+    label: 'Graph',
+    path: '/graph',
   },
   {
-    icon: <Stack2 size={16} />, color: 'blue', label: 'Groups', path: '/groups',
+    icon: <Stack2 size={16} />,
+    color: 'blue',
+    label: 'Groups',
+    path: '/groups',
   },
 ];
 
-function NavbarContent({ hidden, hide }: { hidden: boolean, hide: () => void }) {
+function NavbarContent({ hide }: { hide: () => void }) {
   const theme = useMantineTheme();
 
   const {
-    members, setMembers, partitions, setPartitions, getDiagonalMatrix, setDiagonalMatrix,
+    members,
+    setMembers,
+    partitions,
+    setPartitions,
+    getDiagonalMatrix,
+    setDiagonalMatrix,
   } = useTeamContext();
-  const openFileRef = useRef<() => void>() as React.MutableRefObject<() => void>;
+  const openFileRef = useRef<() => void>() as React.MutableRefObject<
+    () => void
+  >;
 
   const persistenceItems = [
     {
       icon: <Download size={16} />,
       color: 'blue',
       label: 'Export',
-      handler: () => exportJSON('default', { team: { members, connectedness: getDiagonalMatrix() }, partitions }),
+      handler: () =>
+        exportJSON('default', {
+          team: { members, connectedness: getDiagonalMatrix() },
+          partitions,
+        }),
     },
     {
       icon: <Upload size={16} />,
@@ -70,7 +106,10 @@ function NavbarContent({ hidden, hide }: { hidden: boolean, hide: () => void }) 
       color: 'blue',
       label: 'Save',
       handler: () => {
-        saveToStorage('default', { team: { members, connectedness: getDiagonalMatrix() }, partitions });
+        saveToStorage('default', {
+          team: { members, connectedness: getDiagonalMatrix() },
+          partitions,
+        });
         notifyLoad();
       },
     },
@@ -92,47 +131,21 @@ function NavbarContent({ hidden, hide }: { hidden: boolean, hide: () => void }) 
     width: '100%',
     padding: theme.spacing.xs,
     borderRadius: theme.radius.sm,
-    color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
+    // color: theme.colorScheme === "dark" ? theme.colors.dark[0] : theme.black,
 
-    '&:hover': {
-      backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
-    },
+    // "&:hover": {
+    //   backgroundColor:
+    //     theme.colorScheme === "dark"
+    //       ? theme.colors.dark[6]
+    //       : theme.colors.gray[0],
+    // },
   };
 
   return (
-    <Navbar p="md" hiddenBreakpoint="sm" hidden={hidden} width={{ sm: 180, lg: 180 }}>
-      <Navbar.Section mt="md">
-        {navItems.map((item) => (
-          <Link
-            href={item.path}
-            key={item.label}
-          >
-            <a
-              href={item.path}
-              onClick={hide}
-            >
-              <UnstyledButton
-                sx={buttonStyle}
-              >
-                <Group>
-                  <ThemeIcon color={item.color} variant="light">
-                    {item.icon}
-                  </ThemeIcon>
-                  <Text size="sm">{item.label}</Text>
-                </Group>
-              </UnstyledButton>
-            </a>
-          </Link>
-        ))}
-      </Navbar.Section>
-      <Divider style={{ marginTop: '16px' }} />
-      <Navbar.Section mt="md">
-        {persistenceItems.map((item) => (
-          <UnstyledButton
-            sx={buttonStyle}
-            onClick={item.handler}
-            key={item.label}
-          >
+    <>
+      {navItems.map((item) => (
+        <Link href={item.path} key={item.label} onClick={hide}>
+          <UnstyledButton style={buttonStyle}>
             <Group>
               <ThemeIcon color={item.color} variant="light">
                 {item.icon}
@@ -140,56 +153,77 @@ function NavbarContent({ hidden, hide }: { hidden: boolean, hide: () => void }) 
               <Text size="sm">{item.label}</Text>
             </Group>
           </UnstyledButton>
-        ))}
-        <Importer
-          setMembers={setMembers}
-          setDiagonalMatrix={setDiagonalMatrix}
-          setPartitions={setPartitions}
-          openFileRef={openFileRef}
-        />
-      </Navbar.Section>
-    </Navbar>
+        </Link>
+      ))}
+      <Divider style={{ marginTop: '16px' }} />
+      {persistenceItems.map((item) => (
+        <UnstyledButton
+          style={buttonStyle}
+          onClick={item.handler}
+          key={item.label}
+        >
+          <Group>
+            <ThemeIcon color={item.color} variant="light">
+              {item.icon}
+            </ThemeIcon>
+            <Text size="sm">{item.label}</Text>
+          </Group>
+        </UnstyledButton>
+      ))}
+      <Importer
+        setMembers={setMembers}
+        setDiagonalMatrix={setDiagonalMatrix}
+        setPartitions={setPartitions}
+        openFileRef={openFileRef}
+      />
+    </>
   );
 }
 
-export default function Shell({ children, nav }: { children: any, nav: boolean }) {
+export default function Shell({
+  children,
+  nav,
+}: {
+  children: any;
+  nav: boolean;
+}) {
   const theme = useMantineTheme();
-  const [opened, setOpened] = useState(false);
+  const [opened, { toggle, close }] = useDisclosure();
 
   return (
     <AppShell
-      styles={{
-        main: {
-          background: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0],
-        },
+      navbar={
+        nav
+          ? {
+              breakpoint: 'md',
+              width: 180,
+              collapsed: { mobile: !opened },
+            }
+          : undefined
+      }
+      header={{
+        height: 70,
       }}
-      navbarOffsetBreakpoint="sm"
-      asideOffsetBreakpoint="sm"
-      fixed
-      navbar={!nav ? undefined : (
-        <NavbarContent hidden={!opened} hide={() => setOpened(false)} />
-      )}
-      header={(
-        <Header height={70} p="md">
-          <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-            {nav
-            && (
-            <MediaQuery largerThan="sm" styles={{ display: 'none' }}>
-              <Burger
-                opened={opened}
-                onClick={() => setOpened((o) => !o)}
-                size="sm"
-                color={theme.colors.gray[6]}
-                mr="xl"
-              />
-            </MediaQuery>
-            )}
-            <Title order={1}>Mesh:up</Title>
-          </div>
-        </Header>
-      )}
+      padding="xl"
     >
-      {children}
+      <AppShell.Header>
+        <Group h="100%" px="sm">
+          <Burger
+            opened={opened}
+            onClick={toggle}
+            size="sm"
+            color={theme.colors.gray[6]}
+            hiddenFrom="md"
+          />
+          <Title order={1}>Mesh:up</Title>
+        </Group>
+      </AppShell.Header>
+      {nav && (
+        <AppShell.Navbar p="md">
+          <NavbarContent hide={close} />
+        </AppShell.Navbar>
+      )}
+      <AppShell.Main>{children}</AppShell.Main>
     </AppShell>
   );
 }

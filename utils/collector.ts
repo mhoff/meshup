@@ -1,19 +1,20 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable max-classes-per-file */
+/* eslint-disable no-console */
 // import { Peer, DataConnection } from 'peerjs';
-import {
-  ClientData, Member, ServerOpen, WeightUpdate,
-} from '../models/collector';
+import { ClientData, Member, ServerOpen, WeightUpdate } from '../models/collector';
 
 export enum NetworkState {
-  // eslint-disable-next-line no-unused-vars
-  OFFLINE, OPEN, CONNECTED, ERROR
+  OFFLINE = 'OFFLINE',
+  OPEN = 'OPEN',
+  CONNECTED = 'CONNECTED',
+  ERROR = 'ERROR',
 }
 
 interface CollectorStateBase {
-  networkState: NetworkState,
-  connections: number,
-  peerId: string | null,
+  networkState: NetworkState;
+  connections: number;
+  peerId: string | null;
 }
 
 abstract class CollectorBase<T extends CollectorStateBase> {
@@ -104,6 +105,7 @@ abstract class CollectorBase<T extends CollectorStateBase> {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected connOnError(conn: any): void {
     // TODO what if only one connection of many fails?
     this.updateState({
@@ -136,8 +138,7 @@ abstract class CollectorBase<T extends CollectorStateBase> {
   }
 }
 
-export interface CollectorStateServer extends CollectorStateBase {
-}
+export interface CollectorStateServer extends CollectorStateBase {}
 
 export class CollectorServer extends CollectorBase<CollectorStateServer> {
   private members: Member[];
@@ -147,7 +148,7 @@ export class CollectorServer extends CollectorBase<CollectorStateServer> {
   constructor(
     members: Member[],
     callback: (updates: WeightUpdate[]) => void,
-    handleState: (_: CollectorStateServer) => void,
+    handleState: (_: CollectorStateServer) => void
   ) {
     super(handleState);
     this.members = members;
@@ -170,10 +171,12 @@ export class CollectorServer extends CollectorBase<CollectorStateServer> {
       console.error(`${conn.connectionId} has sent illegal token ${token}. Ignoring...`);
       return;
     }
-    this.callback(payload.map((base) => ({
-      sourceId: token,
-      ...base,
-    })));
+    this.callback(
+      payload.map((base) => ({
+        sourceId: token,
+        ...base,
+      }))
+    );
   }
 
   public setCallback(callback: (updates: WeightUpdate[]) => void) {
@@ -189,7 +192,7 @@ export class CollectorServer extends CollectorBase<CollectorStateServer> {
 }
 
 export interface CollectorStateClient extends CollectorStateBase {
-  members: Member[],
+  members: Member[];
 }
 
 export class CollectorClient extends CollectorBase<CollectorStateClient> {
@@ -225,10 +228,12 @@ export class CollectorClient extends CollectorBase<CollectorStateClient> {
     const req: ClientData = {
       token: srcId,
       done: false,
-      payload: [{
-        targetId: trgId,
-        weight,
-      }],
+      payload: [
+        {
+          targetId: trgId,
+          weight,
+        },
+      ],
     };
     for (let i = 0; i < this.conns.length; i++) {
       this.conns[i].send(JSON.stringify(req));

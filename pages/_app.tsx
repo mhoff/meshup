@@ -1,27 +1,28 @@
+import '@mantine/core/styles.css';
+import '@mantine/dropzone/styles.css';
+import '@mantine/notifications/styles.css';
 import '../styles/globals.css';
-import type { AppProps } from 'next/app';
+
 import { MantineProvider } from '@mantine/core';
-import * as React from 'react';
-import { NotificationsProvider } from '@mantine/notifications';
+import { Notifications } from '@mantine/notifications';
 import { NextPage } from 'next';
+import type { AppProps } from 'next/app';
 import { ReactElement, ReactNode } from 'react';
-import { TeamProvider } from '../providers/team';
 import Shell from '../components/shell';
+import { TeamProvider } from '../providers/team';
 
 export type NextPageWithLayout = NextPage & {
-  getLayout?: (page: ReactElement) => ReactNode
-}
+  getLayout?: (page: ReactElement) => ReactNode;
+};
 
 type AppPropsWithLayout = AppProps & {
-  Component: NextPageWithLayout
-}
+  Component: NextPageWithLayout;
+};
 
 function AppLayout(page: ReactElement) {
   return (
     <TeamProvider>
-      <Shell nav>
-        {page}
-      </Shell>
+      <Shell nav>{page}</Shell>
     </TeamProvider>
   );
 }
@@ -31,18 +32,10 @@ function AppRoot({ Component, pageProps }: AppPropsWithLayout) {
   const getLayout = Component.getLayout ?? AppLayout;
 
   return (
-    <MantineProvider
-      withGlobalStyles
-      withNormalizeCSS
-      theme={{
-        /** Put your mantine theme override here */
-        colorScheme: 'light',
-      }}
-    >
-      <NotificationsProvider>
-        {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-        {getLayout(<Component {...pageProps} />)}
-      </NotificationsProvider>
+    <MantineProvider defaultColorScheme="light">
+      {/* eslint-disable-next-line react/jsx-props-no-spreading */}
+      {getLayout(<Component {...pageProps} />)}
+      <Notifications />
     </MantineProvider>
   );
 }

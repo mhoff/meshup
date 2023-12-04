@@ -1,21 +1,12 @@
-import {
-  Dispatch, FormEvent, SetStateAction, useState,
-} from 'react';
-import {
-  Table, Space, ActionIcon, TextInput, UnstyledButton, Group, Textarea,
-} from '@mantine/core';
-import {
-  CornerDownLeft, Trash, ArrowUp, ArrowDown, FileText,
-} from 'tabler-icons-react';
-import * as React from 'react';
+import { ActionIcon, Group, Space, Table, TextInput, Textarea, UnstyledButton } from '@mantine/core';
 import * as R from 'ramda';
-import {
-  Member, newMember,
-} from '../models/team';
+import { Dispatch, FormEvent, SetStateAction, useState } from 'react';
+import { ArrowDown, ArrowUp, CornerDownLeft, FileText, Trash } from 'tabler-icons-react';
+import { Member, newMember } from '../models/team';
 
 interface MemberListProps {
-  members: Member[],
-  setMembers: Dispatch<SetStateAction<Member[]>>
+  members: Member[];
+  setMembers: Dispatch<SetStateAction<Member[]>>;
 }
 
 export default function MemberList({ members, setMembers }: MemberListProps) {
@@ -27,7 +18,13 @@ export default function MemberList({ members, setMembers }: MemberListProps) {
   const handleNewMemberSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!error && input.length > 0) {
-      setMembers([...members, ...input.split('\n').filter((name) => name.length > 0).map(newMember)]);
+      setMembers([
+        ...members,
+        ...input
+          .split('\n')
+          .filter((name) => name.length > 0)
+          .map(newMember),
+      ]);
       setInput('');
     }
   };
@@ -52,7 +49,7 @@ export default function MemberList({ members, setMembers }: MemberListProps) {
 
   return (
     <div style={{ maxWidth: '400px' }}>
-      <Table verticalSpacing={4} sx={{ '& tbody tr td': { borderBottom: 0 } }}>
+      <Table verticalSpacing={4} style={{ '& tbody tr td': { borderBottom: 0 } }}>
         <thead>
           <tr>
             <th>Member Name</th>
@@ -70,20 +67,25 @@ export default function MemberList({ members, setMembers }: MemberListProps) {
               <td>{member.name}</td>
               <td>
                 {index > 0 && (
-                <ActionIcon size={16} onClick={() => setMembers(R.move(index, index - 1, members))}>
-                  <ArrowUp />
-                </ActionIcon>
+                  <ActionIcon variant="subtle" size={16} onClick={() => setMembers(R.move(index, index - 1, members))}>
+                    <ArrowUp />
+                  </ActionIcon>
                 )}
               </td>
               <td>
                 {index < members.length - 1 && (
-                <ActionIcon size={16} onClick={() => setMembers(R.move(index, index + 1, members))}>
-                  <ArrowDown />
-                </ActionIcon>
+                  <ActionIcon variant="subtle" size={16} onClick={() => setMembers(R.move(index, index + 1, members))}>
+                    <ArrowDown />
+                  </ActionIcon>
                 )}
               </td>
               <td>
-                <ActionIcon size={16} onClick={() => setMembers(R.remove(index, 1, members))}>
+                <ActionIcon
+                  variant="subtle"
+                  size={16}
+                  onClick={() => setMembers(R.remove(index, 1, members))}
+                  aria-label="Delete"
+                >
                   <Trash />
                 </ActionIcon>
               </td>
@@ -93,38 +95,50 @@ export default function MemberList({ members, setMembers }: MemberListProps) {
       </Table>
       <Space h="md" />
       <form onSubmit={handleNewMemberSubmit}>
-        {!multiline
-        && (
-        <TextInput
-          type="text"
-          placeholder="Enter new member"
-          value={input}
-          onChange={handleInput}
-          onInvalid={(e) => { (e.target as HTMLInputElement).setCustomValidity(''); e.preventDefault(); }}
-          styles={{
-            rightSection: {
-              width: '66px',
-            },
-          }}
-          rightSection={(
-            <Group>
-              <UnstyledButton onClick={switchInputMode}><FileText size={16} /></UnstyledButton>
-              <UnstyledButton type="submit"><CornerDownLeft size={16} /></UnstyledButton>
-            </Group>
-          )}
-          error={error.length > 0 ? error : ''}
-        />
+        {!multiline && (
+          <TextInput
+            type="text"
+            placeholder="Enter new member"
+            value={input}
+            onChange={handleInput}
+            onInvalid={(e) => {
+              (e.target as HTMLInputElement).setCustomValidity('');
+              e.preventDefault();
+            }}
+            styles={{
+              section: {
+                width: '66px',
+              },
+            }}
+            rightSection={
+              <Group>
+                <UnstyledButton onClick={switchInputMode}>
+                  <FileText size={16} />
+                </UnstyledButton>
+                <UnstyledButton type="submit">
+                  <CornerDownLeft size={16} />
+                </UnstyledButton>
+              </Group>
+            }
+            error={error.length > 0 ? error : ''}
+          />
         )}
-        {multiline
-        && (
-        <Textarea
-          placeholder="Enter new members"
-          value={input}
-          onChange={handleInput}
-          onInvalid={(e) => { (e.target as HTMLInputElement).setCustomValidity(''); e.preventDefault(); }}
-          rightSection={<UnstyledButton type="submit"><CornerDownLeft size={16} /></UnstyledButton>}
-          error={error.length > 0 ? error : ''}
-        />
+        {multiline && (
+          <Textarea
+            placeholder="Enter new members"
+            value={input}
+            onChange={handleInput}
+            onInvalid={(e) => {
+              (e.target as HTMLInputElement).setCustomValidity('');
+              e.preventDefault();
+            }}
+            rightSection={
+              <UnstyledButton type="submit">
+                <CornerDownLeft size={16} />
+              </UnstyledButton>
+            }
+            error={error.length > 0 ? error : ''}
+          />
         )}
       </form>
     </div>
