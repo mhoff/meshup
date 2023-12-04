@@ -33,9 +33,9 @@ jobs:
       - name: Deploy
         uses: up9cloud/action-rsync@v1.4
         env:
-          HOST: w01d1f1b.kasserver.com
-          USER: ssh-w01d1f1b
-          KEY: ${{secrets.DEPLOY_SSH_KEY}}
           ARGS: -ar --delete
           SOURCE: out/
-          TARGET: /www/htdocs/w01d1f1b/meshup.mhoff.net
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          TARGET: ${{ secrets.DEPLOY_TARGET }}
