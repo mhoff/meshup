@@ -48,7 +48,7 @@ export default function MemberList({ members, setMembers }: MemberListProps) {
   };
 
   return (
-    <div style={{ maxWidth: '400px' }}>
+    <div>
       <Table verticalSpacing={4} style={{ '& tbody tr td': { borderBottom: 0 } }}>
         <thead>
           <tr>

@@ -39,7 +39,9 @@ export default function ConnectionGrid({ members, getWeight, setWeight }: Connec
           className={styles.connectionGrid}
           verticalSpacing={4}
           style={{ '& tbody tr td': { borderBottom: 0 }, width: 'auto' }}
-          withRowBorders={false}
+          withRowBorders
+          withColumnBorders
+          // striped={true}
         >
           <Table.Thead>
             <Table.Tr>
@@ -77,7 +79,7 @@ export default function ConnectionGrid({ members, getWeight, setWeight }: Connec
               <Table.Tr key={`row-${rowMember.id}`}>
                 <Table.Td>{rowMember.name}</Table.Td>
                 {members.map((colMember, colIndex) => {
-                  if (rowIndex === colIndex) {
+                  if (rowIndex <= colIndex) {
                     return <Table.Td aria-label="empty self-connection" key={`${rowMember.id}/${colMember.id}`} />;
                   }
                   return (

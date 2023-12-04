@@ -1,7 +1,7 @@
 // import '../styles/globals.css'
 
 import * as d3 from 'd3';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Member } from '../models/team';
 
 interface MemberNode extends d3.SimulationNodeDatum {
@@ -33,17 +33,15 @@ interface MemberGraphProps {
   maxWidth?: number;
 }
 
+const minDistBetweenNodes = 5;
+const linkColorMap = [
+  'red', // strength <0
+  'grey', // strength 0
+  'grey', // strength >0
+];
+const defaultNodeColor = '#CCC';
+
 export default function MemberGraph({ members, getWeights, partitions, maxWidth }: MemberGraphProps) {
-  const minDistBetweenNodes = 5;
-  const linkColorMap = [
-    'red', // strength <0
-    'black', // strength 0
-    'green', // strength >0
-  ];
-  const defaultNodeColor = '#CCC';
-
-  // const svgRef = useRef<SVGSVGElement>(null);
-
   const simulationRef = useRef<d3.Simulation<MemberNode, MemberLink> | null>(null);
   const [animatedNodes, setAnimatedNodes] = useState<MemberNode[]>([]);
   const [animatedLinks, setAnimatedLinks] = useState<MemberLink[]>([]);
@@ -91,7 +89,15 @@ export default function MemberGraph({ members, getWeights, partitions, maxWidth 
     }
 
     const linkSimulation = d3.forceLink<MemberNode, MemberLink>();
-    linkSimulation.strength((link) => (link.strength < 0 ? link.strength * 0.002 : link.strength * 0.01));
+    linkSimulation.strength((link) => {
+      const baseStrengh = link.strength < 0 ? link.strength * 0.002 : link.strength * 0.01;
+      if (Math.max(...partitions) > 0) {
+        if (link.source.partition === link.target.partition) {
+          return baseStrengh + 0.1;
+        }
+      }
+      return baseStrengh;
+    });
     linkSimulation.distance(0);
 
     const simulation = d3
@@ -116,9 +122,9 @@ export default function MemberGraph({ members, getWeights, partitions, maxWidth 
     return () => {
       simulation.stop();
     };
-  }, [nodes, links, nodeRadius]);
+  }, [nodes, links, nodeRadius, partitions]);
 
-  function getViewBox() {
+  const viewBox = useMemo(() => {
     const paddedNodeRadius = nodeRadius + 5;
 
     const minX = Math.min(...animatedNodes.map((n) => n.x as number)) - paddedNodeRadius;
@@ -127,34 +133,37 @@ export default function MemberGraph({ members, getWeights, partitions, maxWidth 
     const maxY = Math.max(...animatedNodes.map((n) => n.y as number)) + paddedNodeRadius;
 
     return `${minX} ${minY} ${maxX - minX} ${maxY - minY}`;
-  }
+  }, [animatedNodes, nodeRadius]);
 
-  function polylinePoints(link: MemberLink) {
-    const sx = link.source.x!!;
-    const sy = link.source.y!!;
-    const tx = link.target.x!!;
-    const ty = link.target.y!!;
+  const polylinePoints = useCallback(
+    (link: MemberLink) => {
+      const sx = link.source.x!!;
+      const sy = link.source.y!!;
+      const tx = link.target.x!!;
+      const ty = link.target.y!!;
 
-    const sw = Math.min(2 * nodeRadius, Math.abs(link.forward) + 1) / 2;
-    const tw = Math.min(2 * nodeRadius, Math.abs(link.backward!!) + 1) / 2;
+      const sw = Math.min(2 * nodeRadius, Math.abs(link.forward) + 1) / 2;
+      const tw = Math.min(2 * nodeRadius, Math.abs(link.backward!!) + 1) / 2;
 
-    const angleSourceTarget = Math.atan2(ty - sy, tx - sx);
-    const orthoSourceTarget = angleSourceTarget - Math.PI / 2;
+      const angleSourceTarget = Math.atan2(ty - sy, tx - sx);
+      const orthoSourceTarget = angleSourceTarget - Math.PI / 2;
 
-    return `${sx - Math.cos(orthoSourceTarget) * sw},${sy - Math.sin(orthoSourceTarget) * sw} 
+      return `${sx - Math.cos(orthoSourceTarget) * sw},${sy - Math.sin(orthoSourceTarget) * sw} 
             ${sx + Math.cos(orthoSourceTarget) * sw},${sy + Math.sin(orthoSourceTarget) * sw}
             ${tx + Math.cos(orthoSourceTarget) * tw},${ty + Math.sin(orthoSourceTarget) * tw}
             ${tx - Math.cos(orthoSourceTarget) * tw},${ty - Math.sin(orthoSourceTarget) * tw}`;
-  }
+    },
+    [nodeRadius]
+  );
 
-  function isLinkHighlighted(link: MemberLink) {
-    return (
+  const isLinkHighlighted = useCallback(
+    (link: MemberLink) =>
       hoveredNode !== null &&
       partitions !== null &&
       hoveredNode?.partition === link.source.partition &&
-      hoveredNode?.partition === link.target.partition
-    );
-  }
+      hoveredNode?.partition === link.target.partition,
+    [hoveredNode, partitions]
+  );
 
   const nodeColors: string[] = useMemo(() => {
     if (partitions.length === 0) {
@@ -168,12 +177,61 @@ export default function MemberGraph({ members, getWeights, partitions, maxWidth 
 
     // https://github.com/d3/d3-scale-chromatic
     const colorPalette = d3.interpolateCubehelixDefault;
-    // if (hoveredNodeIdx !== null) {
-    //   const pHovered = partitioning[hoveredNodeIdx];
-    //   return partitioning.map((p) => (p === pHovered ? colorPalette(p / nPartitions) : defaultNodeColor));
-    // }
-    return partitions.map((p) => colorPalette((p / nPartitions) * 0.5 + 0.25));
-  }, [partitions, /* hoveredNodeIdx, */ members]);
+    return partitions.map((p) => colorPalette((p / nPartitions) * 0.5 + 0.4));
+  }, [partitions, members]);
+
+  const svgLinks = useMemo(
+    () =>
+      animatedLinks
+        .filter((link) => link.strength !== 0)
+        .map((link) =>
+          link.backward !== undefined ? (
+            <polyline
+              key={`link-${link.source.id}-${link.target.id}`}
+              points={`${polylinePoints(link)}`}
+              style={{ fill: isLinkHighlighted(link) ? 'red' : linkColorMap[Math.sign(link.strength) + 1] }}
+            />
+          ) : (
+            <line
+              key={`link-${link.source.id}-${link.target.id}`}
+              x1={link.source.x}
+              x2={link.target.x}
+              y1={link.source.y}
+              y2={link.target.y}
+              style={{ stroke: isLinkHighlighted(link) ? 'red' : linkColorMap[Math.sign(link.strength) + 1] }}
+              strokeWidth={Math.min(2 * nodeRadius, Math.abs(link.strength) + 1)}
+              strokeDasharray={link.strength === 0 ? 5 : 0}
+            />
+          )
+        ),
+    [animatedLinks, isLinkHighlighted, nodeRadius, polylinePoints]
+  );
+
+  const svgNodes = useMemo(
+    () =>
+      animatedNodes.map((node, i) => (
+        <g
+          className="node"
+          transform={`translate(${node.x}, ${node.y})`}
+          key={node.id}
+          onMouseEnter={() => {
+            setHoveredNode(node);
+          }}
+          onMouseLeave={() => {
+            if (hoveredNode === node) {
+              setHoveredNode(null);
+            }
+          }}
+        >
+          {hoveredNode != null && node.partition === hoveredNode?.partition && <circle fill="red" r={node.r + 2} />}
+          <circle fill={nodeColors[i]} r={node.r} />
+          <text y={5} fill="black" fontSize={13} textAnchor="middle">
+            {node.name}
+          </text>
+        </g>
+      )),
+    [hoveredNode, setHoveredNode, nodeColors, animatedNodes]
+  );
 
   return (
     <div>
@@ -185,51 +243,10 @@ export default function MemberGraph({ members, getWeights, partitions, maxWidth 
             maxHeight: '80vh', // TODO
             ...(maxWidth !== null ? { maxWidth: `${maxWidth}px` } : {}),
           }}
-          viewBox={getViewBox()}
+          viewBox={viewBox}
         >
-          <g strokeOpacity={0.8}>
-            {animatedLinks.map((link) =>
-              link.backward !== undefined ? (
-                <polyline
-                  key={`link-${link.source.id}-${link.target.id}`}
-                  points={`${polylinePoints(link)}`}
-                  style={{ fill: isLinkHighlighted(link) ? 'red' : linkColorMap[Math.sign(link.strength) + 1] }}
-                />
-              ) : (
-                <line
-                  key={`link-${link.source.id}-${link.target.id}`}
-                  x1={link.source.x}
-                  x2={link.target.x}
-                  y1={link.source.y}
-                  y2={link.target.y}
-                  style={{ stroke: isLinkHighlighted(link) ? 'red' : linkColorMap[Math.sign(link.strength) + 1] }}
-                  strokeWidth={Math.min(2 * nodeRadius, Math.abs(link.strength) + 1)}
-                  strokeDasharray={link.strength === 0 ? 5 : 0}
-                />
-              )
-            )}
-          </g>
-          {animatedNodes.map((node, i) => (
-            <g
-              className="node"
-              transform={`translate(${node.x}, ${node.y})`}
-              key={node.id}
-              onMouseEnter={() => {
-                setHoveredNode(node);
-              }}
-              onMouseLeave={() => {
-                if (hoveredNode === node) {
-                  setHoveredNode(null);
-                }
-              }}
-            >
-              {hoveredNode != null && node.partition === hoveredNode?.partition && <circle fill="red" r={node.r + 2} />}
-              <circle fill={nodeColors[i]} r={node.r} />
-              <text y={5} fill="black" fontSize={13} textAnchor="middle">
-                {node.name}
-              </text>
-            </g>
-          ))}
+          <g strokeOpacity={1}>{svgLinks}</g>
+          {svgNodes}
         </svg>
       ) : (
         'More team members required.'

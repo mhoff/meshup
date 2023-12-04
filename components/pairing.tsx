@@ -1,12 +1,24 @@
 // import '../styles/globals.css'
 
-import { Box, Button, InputWrapper, RangeSlider } from '@mantine/core';
+import {
+  Box,
+  Button,
+  Collapse,
+  Group,
+  LoadingOverlay,
+  Paper,
+  ScrollArea,
+  Text,
+  ThemeIcon,
+  Tooltip,
+} from '@mantine/core';
 import * as R from 'ramda';
-import * as React from 'react';
-import { FormEvent, useCallback, useMemo, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
+import { Check, X } from 'tabler-icons-react';
 import { Member } from '../models/collector';
-import partition from '../utils/solver';
+import partition, { Partitioning } from '../utils/solver';
 import styles from './Pairing.module.scss';
+import GeneratorSettingsEditor, { GeneratorSettings } from './generatorSettingsEditor';
 
 interface PairingProps {
   members: Member[];
@@ -15,88 +27,70 @@ interface PairingProps {
   getMatrix: () => number[][];
 }
 
+interface ResultMeta {
+  partitioningResults: Partitioning[];
+  minWeight: number;
+  minSpread: number;
+  singleBest: boolean;
+}
+
 export default function Pairing({ members, partitions, setPartitions, getMatrix }: PairingProps) {
-  const [groupCounts, setGroupCounts] = useState<[number, number]>([0, 0]);
-  const [userGroupSizes, setUserGroupSizes] = useState<[number, number] | undefined>();
+  const [generatorSettings, setGeneratorSettings] = useState<GeneratorSettings | undefined>(undefined);
   const [inputError, setInputError] = useState<string | undefined>(undefined);
-  const [loading, setLoading] = useState<Boolean>(false);
-
-  const groupSizeConf = React.useMemo(() => {
-    const min = Math.max(...[1, Math.floor(members.length / groupCounts[1])].filter(Number.isFinite));
-    const max = Math.min(...[members.length, Math.ceil(members.length / groupCounts[0])].filter(Number.isFinite));
-    return {
-      min,
-      max,
-      marks: R.range(min, max + 1).map((i) => ({ value: i, label: i })),
-    };
-  }, [members, groupCounts]);
-
-  const groupSizes = useMemo(
-    () => userGroupSizes || [groupSizeConf.min, groupSizeConf.max],
-    [userGroupSizes, groupSizeConf]
-  ) as [number, number];
-
-  const isGroupCountValid = useCallback(
-    (count: number) => {
-      const [minSize, maxSize] = groupSizes;
-      return count * minSize <= members.length && count * maxSize >= members.length;
-    },
-    [members, groupSizes]
-  );
-
-  const validGroupCounts = useMemo(
-    () => R.range(groupCounts[0], groupCounts[1] + 1).filter(isGroupCountValid),
-    [groupCounts, isGroupCountValid]
-  );
+  const [loading, setLoading] = useState<boolean>(false);
+  const [resultMeta, setResultMeta] = useState<ResultMeta>();
 
   const handleGeneratorSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const [minSize, maxSize] = groupSizes;
+    if (generatorSettings) {
+      setLoading(true);
+      setInputError(undefined);
+      setResultMeta(undefined);
+      setPartitions([]);
 
-    setLoading(true);
-    setInputError(undefined);
-    const partitionResult = await partition(getMatrix(), validGroupCounts, minSize, maxSize);
-    if (partitionResult === null) {
-      setInputError(
-        'Mesh:up failed to compute a result using the given parameterization. This does not imply there is none.'
-      );
-    } else {
-      setPartitions(partitionResult);
+      setTimeout(async () => {
+        const result = await partition(
+          getMatrix(),
+          R.range(generatorSettings.minGroupCount, generatorSettings.maxGroupCount + 1),
+          generatorSettings.minGroupSize,
+          generatorSettings.maxGroupSize
+        );
+
+        if (result.length === 0) {
+          setInputError(
+            'Mesh:up failed to compute a result using the given parameterization. This does not imply there is none.'
+          );
+        } else {
+          const minWeight = Math.min(...R.map(R.prop('sumOfInternalWeights'), result));
+          const minSpread = Math.min(...R.map(R.prop('partitionSizeSpread'), result));
+
+          const bestResults = result.filter(
+            (p) => p.sumOfInternalWeights === minWeight && p.partitionSizeSpread === minSpread
+          );
+
+          if (bestResults.length === 1) {
+            setPartitions(bestResults[0].partitionPerNode);
+          }
+          setResultMeta({
+            partitioningResults: result,
+            minSpread,
+            minWeight,
+            singleBest: bestResults.length === 1,
+          });
+        }
+        setLoading(false);
+      }, 50);
     }
-    setLoading(false);
   };
 
-  React.useEffect(() => {
-    setGroupCounts(([prevMin, prevMax]) => (prevMax === 0 ? [1, members.length] : [prevMin, prevMax]));
-  }, [members]);
-
-  const groupCountConf = React.useMemo(
-    () => ({
-      min: 1,
-      max: members.length,
-      marks: R.range(1, members.length + 1).map((i) => ({
-        value: i,
-        label: (
-          <span className={isGroupCountValid(i) || i < groupCounts[0] || i > groupCounts[1] ? '' : styles.illegalMark}>
-            {i}
-          </span>
-        ),
-      })),
-    }),
-    [members, isGroupCountValid, groupCounts]
-  );
-
-  React.useEffect(() => {
-    setUserGroupSizes(
-      (prevSizes) =>
-        prevSizes === undefined
-          ? undefined // init range
-          : [
-              Math.max(groupSizeConf.min, Math.min(prevSizes[0], groupSizeConf.max)),
-              Math.min(groupSizeConf.max, Math.max(prevSizes[1], groupSizeConf.min)),
-            ] // update boundaries
-    );
-  }, [groupSizeConf]);
+  const partitioningResults = useMemo(() => {
+    const sortResults = R.sortWith<Partitioning>([
+      R.ascend(R.prop('sumOfInternalWeights')),
+      R.ascend(R.prop('partitionSizeSpread')),
+      R.ascend(R.pipe(R.prop('partitionSizes'), R.length)),
+    ]);
+    return resultMeta ? sortResults(resultMeta.partitioningResults) : undefined;
+  }, [resultMeta]);
 
   const partitionedMembers = useMemo(() => {
     if (partitions.length > 0) {
@@ -111,63 +105,106 @@ export default function Pairing({ members, partitions, setPartitions, getMatrix 
     return undefined;
   }, [partitions, members]);
 
+  const displayAllResults = true; // TODO should be able to toggle?
+
   return (
     <div className={styles.pairing}>
       {members.length > 1 ? (
-        <Box style={{ maxWidth: 300 }} mx="0">
+        <Box pos="relative">
+          <LoadingOverlay visible={loading} />
+
           <form onSubmit={handleGeneratorSubmit}>
-            <InputWrapper label={`Number of groups: ${groupCounts[0]} - ${groupCounts[1]}`}>
-              <RangeSlider
-                label={null}
-                step={1}
-                minRange={0}
-                min={groupCountConf.min}
-                max={groupCountConf.max}
-                marks={groupCountConf.marks}
-                value={groupCounts}
-                onChange={setGroupCounts}
-                style={{ marginBottom: '40px' }}
-              />
-            </InputWrapper>
-            <InputWrapper label={`Desired group sizes: ${groupSizes[0]} - ${groupSizes[1]}`}>
-              <RangeSlider
-                label={null}
-                step={1}
-                minRange={0}
-                min={groupSizeConf.min}
-                max={groupSizeConf.max}
-                marks={groupSizeConf.marks}
-                value={groupSizes}
-                onChange={setUserGroupSizes}
-                style={{ marginBottom: '40px' }}
-              />
-            </InputWrapper>
-            {R.range(groupCounts[0], groupCounts[1] + 1).some(R.complement(isGroupCountValid)) && (
-              <>
-                <div style={{ fontSize: 10 }}>
-                  Group counts indicated in <span className={styles.illegalMark}>red</span> are not feasible given the
-                  selected group sizes. These group counts will be ignored.
-                </div>
-                <br />
-              </>
-            )}
-            <br />
-            <Button type="submit" fullWidth disabled={validGroupCounts.length === 0}>
+            <GeneratorSettingsEditor memberCount={members.length} setGeneratorSettings={setGeneratorSettings} />
+            <Button type="submit" fullWidth disabled={generatorSettings === undefined} style={{ marginTop: 20 }}>
               Generate
             </Button>
+            {inputError && <div>{inputError}</div>}
+            {loading && <span>Loading...</span>}
+            {partitioningResults && resultMeta && (
+              <Box style={{ marginTop: 20 }}>
+                {partitioningResults.length === 0 && <Text>No results found.</Text>}
+                {partitioningResults.length === 1 && (
+                  <Text>The algorithm identified one optimal solution which has been auto-selected.</Text>
+                )}
+                {partitioningResults.length > 1 && (
+                  <>
+                    <Text>
+                      The algorithm identified {partitioningResults.length} different solutions{' '}
+                      {resultMeta.singleBest && <span>from which the single best has been auto-selected</span>}
+                      {!resultMeta.singleBest && <span>with multiple optimal results (please select one)</span>}:
+                    </Text>
+                    {partitioningResults.length > 1 && (
+                      <Collapse in={displayAllResults}>
+                        <ScrollArea h={300} type="auto" offsetScrollbars>
+                          {partitioningResults.map((p) => (
+                            <Paper
+                              key={p.kind}
+                              p="md"
+                              shadow="md"
+                              style={{ margin: 10 }}
+                              onClick={() => setPartitions(p.partitionPerNode)}
+                              withBorder
+                              styles={{ root: partitions === p.partitionPerNode ? { borderColor: 'green' } : {} }}
+                            >
+                              <Text>Number of groups: {p.partitionSizes.length}</Text>
+                              <Text>Groups: [{p.partitionSizes.join(',')}]</Text>
+                              <Group gap={1}>
+                                <Text>Internal connectedness: {p.sumOfInternalWeights}</Text>
+                                {p.sumOfInternalWeights === resultMeta.minWeight && (
+                                  <Tooltip label="optimal result" position="right">
+                                    <ThemeIcon variant="white" color="green">
+                                      <Check strokeWidth={4} size={13} />
+                                    </ThemeIcon>
+                                  </Tooltip>
+                                )}
+                                {p.sumOfInternalWeights !== resultMeta.minWeight && (
+                                  <Tooltip label={`worse than the minimum of ${resultMeta.minWeight}`} position="right">
+                                    <ThemeIcon variant="white" color="red">
+                                      <X strokeWidth={4} size={13} />
+                                    </ThemeIcon>
+                                  </Tooltip>
+                                )}
+                              </Group>
+                              <Group gap={1}>
+                                <Text>Group size spread: {p.partitionSizeSpread} </Text>
+                                {p.partitionSizeSpread === resultMeta.minSpread && (
+                                  <Tooltip label="optimal result" position="right">
+                                    <ThemeIcon variant="white" color="green">
+                                      <Check strokeWidth={4} size={13} />
+                                    </ThemeIcon>
+                                  </Tooltip>
+                                )}
+                                {p.partitionSizeSpread !== resultMeta.minSpread && (
+                                  <Tooltip label={`worse than the minimum of ${resultMeta.minSpread}`} position="right">
+                                    <ThemeIcon variant="white" color="red">
+                                      <X strokeWidth={4} size={13} />
+                                    </ThemeIcon>
+                                  </Tooltip>
+                                )}
+                              </Group>
+                            </Paper>
+                          ))}
+                        </ScrollArea>
+                      </Collapse>
+                    )}
+                  </>
+                )}
+              </Box>
+            )}
+            {partitionedMembers && (
+              <Box style={{ marginTop: 20 }}>
+                <Text>These are the resulting groups and their members:</Text>
+                <ol>
+                  {partitionedMembers.map(({ members, partition }) => (
+                    <li key={partition}>{members.map((m) => m.name).join(', ')}</li>
+                  ))}
+                </ol>
+              </Box>
+            )}
           </form>
         </Box>
       ) : (
         <p>You need to enter more team members to generate meaningful pairings.</p>
-      )}
-      {inputError && <div>{inputError}</div>}
-      {loading && <span>Loading...</span>}
-      {partitionedMembers && (
-        <ul>
-          {partitionedMembers.map(({ members, partition }) => (
-            <li key={partition}>{members.map((m) => m.name).join(', ')}</li>
-          ))}
-        </ul>
       )}
     </div>
   );

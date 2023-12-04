@@ -27,7 +27,8 @@ async function getModule(): Promise<any> {
   return moduleSingleton;
 }
 
-interface Partitioning {
+export interface Partitioning {
+  kind: string;
   partitionPerNode: number[];
   partitionSizes: number[];
   sumOfInternalWeights: number;
@@ -51,8 +52,9 @@ function getSumOfWeights(parts: Int32Array, conns: number[][]): number {
 
 function derivePartitioning(parts: Int32Array, conns: number[][]): Partitioning {
   const partitionPerNode = [...parts.values()];
-  const partitionSizes = R.values(R.countBy(R.identity, partitionPerNode));
+  const partitionSizes = R.values(R.countBy(R.identity, partitionPerNode)).sort();
   return {
+    kind: partitionSizes.join(','),
     partitionPerNode,
     partitionSizes,
     sumOfInternalWeights: getSumOfWeights(parts, conns),
@@ -66,7 +68,7 @@ export default async function partition(
   minSize: number,
   maxSize: number,
   maxIterationsPerCount: number = 40
-): Promise<number[]> {
+): Promise<Partitioning[]> {
   const negWeight = Math.min(0, Math.min(...conn.map((row) => Math.min(...row.filter(Number.isFinite)))));
   const maxWeight = Math.max(...conn.map((row) => Math.max(...row.filter(Number.isFinite)))) - negWeight;
 
@@ -107,12 +109,12 @@ export default async function partition(
   const perfectBalance = true;
   const mode = 5;
 
-  let best: Partitioning | null = null;
+  const bestPerKind: { [kind: string]: Partitioning } = {};
 
   for (let i = 0; i < partitionCounts.length; i++) {
     let iterations = maxIterationsPerCount;
     // eslint-disable-next-line no-plusplus
-    while (best === null || iterations-- > 0) {
+    while (iterations-- > 0) {
       const [, npartsPtr] = inputIntArrPtr([partitionCounts[i]]);
       const seed = Math.round(Math.random() * 10000);
 
@@ -147,17 +149,19 @@ export default async function partition(
             `spread = ${curr.partitionSizeSpread}, count = ${curr.partitionSizes.length}`
         );
 
+        const best = bestPerKind[curr.kind] ?? null;
+
         if (
           best == null ||
           curr.sumOfInternalWeights < best.sumOfInternalWeights ||
           (curr.sumOfInternalWeights === best.sumOfInternalWeights &&
             curr.partitionSizeSpread < best.partitionSizeSpread)
         ) {
-          best = curr;
+          bestPerKind[curr.kind] = curr;
         }
       }
     }
   }
 
-  return best?.partitionPerNode!!;
+  return Object.values(bestPerKind);
 }
