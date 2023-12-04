@@ -66,7 +66,9 @@ export default function ConnectionGrid({ members, getWeight, setWeight }: Connec
                 )}
               </Table.Th>
               {members.map((member) => (
-                <Table.Th key={`col-${member.id}`}>{member.name}</Table.Th>
+                <Table.Th key={`col-${member.id}`}>
+                  <span>{member.name}</span>
+                </Table.Th>
               ))}
             </Table.Tr>
           </Table.Thead>
